@@ -1,5 +1,7 @@
 ######################################################################################################
+# a233 Royal Botanical Gardens Wildlife Corridor Mapping                                             #
 # Create study area from series of points and use it to create one LULC map                          #
+#                                                                                                    #
 # 1. Create study area                                                                               #
 # - create polygon from points                                                                       #
 # - Buffer polygon by 20km for study area                                                            #
@@ -21,7 +23,7 @@ library(sf)
 library(raster)
 
 # Directories
-projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity"
+projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
 dataDir <- file.path(projectDir, "Data/Raw")
 outDir <- file.path(projectDir, "Data/Processed")
 
@@ -33,12 +35,13 @@ polygonBufferWidth <- 20 # in km : the study area is made by buffering the polyg
 studyAreaPoints <- read_csv(file.path(paste0(dataDir, "/Study Area"), "Vertices 20200610 DAG.csv")) # Study area vertices
 
   # LULC data
+SOLRISRaw <- raster(file.path(paste0(dataDir, "/Land use land cover/SOLRIS_Version_3_0"), "SOLRIS_Version_3_0_LAMBERT.tif"))
 OLCDBRaw <- raster(file.path(paste0(dataDir, "/Land use land cover/Provincial Land Cover 1996 - 28 Class Grid"), "plc1996_28.tif"))
 ORNRaw <- st_read(file.path(paste0(dataDir, "/Land use land cover/Ontario_Road_Network__ORN__Segment_With_Address-shp"), "Ontario_Road_Network__ORN__Segment_With_Address.shp"))
-SOLRISRaw <- raster(file.path(paste0(dataDir, "/Land use land cover/SOLRIS_Version_3_0"), "SOLRIS_Version_3_0_LAMBERT.tif"))
-
+OHNRaw <- st_read(file.path(paste0(dataDir, "/Land use land cover/Ontario_Hydro_Network__OHN__-_Waterbody-shp"), "Ontario_Hydro_Network__OHN__-_Waterbody.shp"))
+urbanRaw <- st_read(file.path(paste0(dataDir, "/Land use land cover/Built-Up_Area-shp"), "Built-Up_Area.shp"))
   # Resistance crosswalk
-crosswalk <- read.csv(file.path(paste0(dataDir, "/Resistance"), "ResistanceCrosswalk.csv"))
+crosswalk <- read_csv(file.path(paste0(dataDir, "/Resistance"), "ResistanceCrosswalk.csv"))
 
 # Create study area -------------------------------------
 # Create spatial polygon from points
@@ -97,32 +100,67 @@ OLCDB_rcl <- OLCDB %>%
 # Crop
 ORN <- ORNRaw %>%
   st_transform(., crs=st_crs(SOLRIS)) %>% # Transform to SOLRIS CRS
-  st_intersection(., studyAreaBuffer) # Clip to buffered study area
-
+  st_intersection(., studyAreaBuffer) %>% # Clip to buffered study area
+  st_buffer(., 12) # Buffer road lines by 12m so that rasterizing aligns with roads in SOLRIS
+  
 # Reclassify
 ORN_rcl <- ORN %>%
   left_join(., crosswalk[which(crosswalk$Source_Name == "ORN"), c("Destination_ID", "Source_Label")], by=c("ROAD_CLASS" = "Source_Label")) %>% # Add Destination_ID
   rasterize(., SOLRIS, field="Destination_ID") # Rasterize
 
+# OHN
+# Crop
+OHN <- OHNRaw %>%
+  st_transform(., crs=st_crs(SOLRIS)) %>% # Transform to SOLRIS CRS
+  mutate(AREA = as.numeric(st_area(.))) %>% # Calculate the area of each waterbody
+  dplyr::filter(AREA >= 100) %>% # Keep waterbodies larger than 100m2
+  st_intersection(., studyAreaBuffer) # Clip to buffered study area
+
+OHN_rcl <- OHN %>%
+  left_join(., crosswalk[which(crosswalk$Source_Name == "OHN"), c("Destination_ID", "Source_Label")], by=c("WATERBODY_" = "Source_Label")) %>% # Add Destination_ID
+  rasterize(., SOLRIS, field="Destination_ID") # Rasterize
+
+# Urban Areas
+urban <- urbanRaw %>%
+  st_transform(., crs=st_crs(SOLRIS)) %>% # Transform to SOLRIS CRS
+  st_intersection(., studyAreaBuffer)
+
+urban_rcl <- urban %>%
+#  filter(COMMUNIT_1 == "Built-up Area Impervious") %>%
+  left_join(., crosswalk[which(crosswalk$Source_Name == "Built-up Areas"), c("Destination_ID", "Source_Label")], by=c("COMMUNIT_1" = "Source_Label")) %>% # Add Destination_ID
+  rasterize(., SOLRIS, field="Destination_ID") # Rasterize
+
+
 # LULC - Combine rasters ---------------------------
 # Remove undifferentiated cells from SOLRIS so that they can take the value from OLCDB
 SOLRIS_rcl[SOLRIS_rcl == 250] <- NA
 
-# Merge rasters: ORN gets priority, followed by SOLRIS, followed by OLCDB
-LULC <- merge(ORN_rcl, SOLRIS_rcl, OLCDB_rcl)
+# Merge rasters: urba gets priority, followed by ORN, OHN, SOLRIS, and last OLCDB
+LULC <- merge(urban_rcl, ORN_rcl, OHN_rcl, SOLRIS_rcl, OLCDB_rcl)
+
+# Crop to study area
+LULC_unbuffered <- LULC %>%
+  crop(., extent(studyArea), snap="out") %>% # Crop to study area extent
+  mask(., mask=studyArea) %>% # Clip to study area
+  trim(.)
 
 # Save outputs --------------------------
 # Save intermediate output
 st_write(polygonProjected, file.path(outDir, "polygon_projected.shp"), driver="ESRI Shapefile")
-st_write(studyArea, file.path(outDir, "studyarea_unbuffered.shp"), driver="ESRI Shapefile")
-st_write(studyAreaBuffer, file.path(outDir, "studyarea_buffered.shp"), driver="ESRI Shapefile")
+st_write(studyArea, file.path(outDir, paste0("studyarea_", polygonBufferWidth, "km_unbuffered.shp")), driver="ESRI Shapefile")
+st_write(studyAreaBuffer, file.path(outDir, paste0("studyarea_", polygonBufferWidth, "km_buffered.shp")), driver="ESRI Shapefile")
 writeRaster(SOLRIS, file.path(outDir, paste0("SOLRIS_", polygonBufferWidth, "km_buffered.tif")))
 writeRaster(SOLRIS_rcl, file.path(outDir, paste0("SOLRIS_reclass_", polygonBufferWidth, "km_buffered.tif")))
 writeRaster(OLCDB, file.path(outDir, paste0("OLCDB_", polygonBufferWidth, "km_buffered.tif")))
 writeRaster(OLCDB_rcl, file.path(outDir, paste0("OLCDB_reclass_", polygonBufferWidth, "km_buffered.tif")))
 st_write(ORN, file.path(outDir, paste0("ORN_", polygonBufferWidth, "km_buffered.shp")), driver="ESRI Shapefile")
 writeRaster(ORN_rcl, file.path(outDir, paste0("ORN_reclass_", polygonBufferWidth, "km_buffered.tif")))
+st_write(OHN, file.path(outDir, paste0("OHN_", polygonBufferWidth, "km_buffered.shp")), driver="ESRI Shapefile")
+writeRaster(OHN_rcl, file.path(outDir, paste0("OHN_reclass_", polygonBufferWidth, "km_buffered.tif")))
+st_write(urban, file.path(outDir, paste0("Urban_", polygonBufferWidth, "km_buffered.shp")), driver="ESRI Shapefile")
+writeRaster(urban_rcl, file.path(outDir, paste0("Urban_reclass_", polygonBufferWidth, "km_buffered.tif")))
 
 # Save final output
-writeRaster(LULC, file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_buffered.tif")))
+writeRaster(LULC, file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
+writeRaster(LULC_unbuffered, file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_unbuffered.tif")))
 

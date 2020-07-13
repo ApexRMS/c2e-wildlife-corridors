@@ -1,6 +1,6 @@
 #####################################################################
 # a233 Royal Botanical Gardens Wildlife Corridor Mapping            #
-# Create resistance surface                                         #
+# Create focal nodes                                                #
 #                                                                   #
 # Inputs:                                                           #
 #    - The combined LULC layer produced by 1_StudyAreaLULC.R        #                                                                       #
@@ -8,7 +8,7 @@
 # Outputs:                                                          #
 #    - Resistance layer                                             #
 #                                                                   #
-# Script created by Bronwyn Rayfield and Chloé Debeyser for ApexRMS #
+# Script created by Bronwyn Rayfield and ChloÃ© Debeyser for ApexRMS #
 #####################################################################
 
 # Workspace ---------------------------------------------------------
@@ -28,24 +28,24 @@ outDir <- file.path(projectDir, "Data/Processed")
 polygonBufferWidth <- 20 # In km
 
 # Read in data
-      # Combined LULC layers
+# Combined LULC layers
 LULC <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_buffered.tif")))
 LULC_unbuffered <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_unbuffered.tif")))
 
-      # Resistance crosswalk
+# Resistance crosswalk
 crosswalk <- read_csv(file.path(paste0(dataDir, "/Resistance"), "ResistanceCrosswalk.csv"))
 
-# Create resistance layer  ---------------------------------------------------------
-# Reclassify
-resistance <- LULC %>%
-  reclassify(., rcl=crosswalk[, c("Destination_ID", "Resistance")])
 
-resistance_unbuffered <- LULC_unbuffered %>%
-  reclassify(., rcl=crosswalk[, c("Destination_ID", "Resistance")])
-
-# Save outputs ---------------------------------------------------------
-writeRaster(resistance, file.path(outDir, paste0("Resistance_buffer", polygonBufferWidth, "km_buffered.tif")))
-writeRaster(resistance_unbuffered, file.path(outDir, paste0("Resistance_buffer", polygonBufferWidth, "km_unbuffered.asc")))
+y<-resistance
+y[y>0]<-0
+y[1,2448]<-1
+y[nrow(y),1990]<-2
+y[1,]<-1
+y[nrow(y),]<-2
 
 
+y[y==0]<-NA
+writeRaster(y, file.path(outDir, paste0("FocalNode_test_", polygonBufferWidth, "km_buffered.tif")), overwrite=T)
+writeRaster(y, file.path(outDir, paste0("FocalNode_test_", polygonBufferWidth, "km_buffered.asc")), overwrite=T)
 
+unique(y)
