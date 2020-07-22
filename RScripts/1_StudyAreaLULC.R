@@ -135,7 +135,7 @@ urban_rcl <- urban %>%
 # Remove undifferentiated cells from SOLRIS so that they can take the value from OLCDB
 SOLRIS_rcl[SOLRIS_rcl == 250] <- NA
 
-# Merge rasters: urba gets priority, followed by ORN, OHN, SOLRIS, and last OLCDB
+# Merge rasters: urban gets priority, followed by ORN, OHN, SOLRIS, and last OLCDB
 LULC <- merge(urban_rcl, ORN_rcl, OHN_rcl, SOLRIS_rcl, OLCDB_rcl)
 
 # Crop to study area

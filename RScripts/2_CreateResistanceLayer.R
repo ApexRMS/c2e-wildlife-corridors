@@ -44,8 +44,12 @@ resistance_unbuffered <- LULC_unbuffered %>%
   reclassify(., rcl=crosswalk[, c("Destination_ID", "Resistance")])
 
 # Save outputs ---------------------------------------------------------
-writeRaster(resistance, file.path(outDir, paste0("Resistance_buffer", polygonBufferWidth, "km_buffered.tif")))
-writeRaster(resistance_unbuffered, file.path(outDir, paste0("Resistance_buffer", polygonBufferWidth, "km_unbuffered.asc")))
+#geotif
+writeRaster(resistance, file.path(outDir, paste0("Resistance_buffer", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
+writeRaster(resistance_unbuffered, file.path(outDir, paste0("Resistance_buffer", polygonBufferWidth, "km_unbuffered.tif")), overwrite=TRUE)
+#asc
+writeRaster(resistance, file.path(outDir, paste0("Resistance_buffer", polygonBufferWidth, "km_buffered.asc")), overwrite=TRUE)
+writeRaster(resistance_unbuffered, file.path(outDir, paste0("Resistance_buffer", polygonBufferWidth, "km_unbuffered.asc")), overwrite=TRUE)
 
 
 

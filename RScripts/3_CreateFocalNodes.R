@@ -28,23 +28,27 @@ outDir <- file.path(projectDir, "Data/Processed")
 polygonBufferWidth <- 20 # In km
 
 # Read in data
-# Combined LULC layers
-LULC <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_buffered.tif")))
-LULC_unbuffered <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_unbuffered.tif")))
+# Resistance layer
+resistance <- raster(file.path(outDir, paste0("Resistance_buffer", polygonBufferWidth, "km_buffered.tif")))
 
-# Resistance crosswalk
-crosswalk <- read_csv(file.path(paste0(dataDir, "/Resistance"), "ResistanceCrosswalk.csv"))
+# Create binary study area raster
+studyArea <- resistance
+studyArea[studyArea>0] <- 1
+
+boundary <- boundaries(studyArea, type='inner', directions=8, asNA=T)
+
+focalNodes5 <- sampleRandom(boundary, size=5, asRaster=T)
+focalNodesID5 <- clump(focalNodes5)
 
 
-y<-resistance
-y[y>0]<-0
-y[1,2448]<-1
-y[nrow(y),1990]<-2
-y[1,]<-1
-y[nrow(y),]<-2
+# y[1,2448]<-1
+# y[nrow(y),1990]<-2
+# y[1,]<-1
+# y[nrow(y),]<-2
 
 
 y[y==0]<-NA
+writeRaster(focalNodesID5, file.path(outDir, paste0("FocalNode_try5_", polygonBufferWidth, "km_buffered.asc")), overwrite=T)
 writeRaster(y, file.path(outDir, paste0("FocalNode_test_", polygonBufferWidth, "km_buffered.tif")), overwrite=T)
 writeRaster(y, file.path(outDir, paste0("FocalNode_test_", polygonBufferWidth, "km_buffered.asc")), overwrite=T)
 
