@@ -24,33 +24,37 @@ options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=
 
 # Directories
 projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
-dataDir <- file.path(projectDir, "Data/Raw")
+dataDir <- file.path(projectDir, "Data/Processed")
 outDir <- file.path(projectDir, "Data/Processed")
 
 # Input parameters
+species <- "BLBR"
 polygonBufferWidth <- 20 # In km
+suitabilityThreshold <- 60
 
 # Read in data
 # Combined LULC layers
-LULC <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_buffered.tif")))
-LULC_unbuffered <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_unbuffered.tif")))
+LULC <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km.tif")))
+LULC_buffer <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_buffered.tif")))
 # Focal area polygon
-focalArea <- st_read(file.path(dataDir, "polygon_projected.shp"))
+focalArea <- st_read(file.path(dataDir, "FocalArea.shp"))
 # Study area polygon
-studyArea <- st_read(file.path(dataDir, "studyarea_20km_unbuffered.shp"))
+studyArea <- st_read(file.path(dataDir, "studyarea_20km.shp"))
 
-# Resistance crosswalk
-crosswalkHabSuit <- read_csv(file.path(paste0(dataDir, "/Focal Species"), "HabitatSuitabilityCrosswalk.csv"))
-crosswalkResist <- read_csv(file.path(paste0(dataDir, "/Focal Species"), "FocalSpeciesResistanceCrosswalk.csv"))
+# Tabular data
+crosswalkHabSuit <- read_csv(file.path(paste0(dataDir, "/Focal Species"), "FocalSpeciesHabitatSuitabilityCrosswalk.csv"))
+crosswalkResist <- read_csv(file.path(paste0(dataDir, "/Resistance"), "FocalSpeciesResistanceCrosswalk.csv"))
+minPatchSize <- read_csv(file.path(paste0(dataDir, "/Focal Species"), "FocalSpeciesMinPatchSize.csv"))
+dispersalDistance <- read_csv(file.path(paste0(dataDir, "/Focal Species"), "FocalSpeciesDispersalDistance.csv"))
+
 
 # Create habitat suitability layer  ---------------------------------------------------------
 # Reclassify
 suitabilityRaster <- LULC %>%
-  reclassify(., rcl=crosswalkHabSuit[, c("LULC_ID", "BLBR")])
+  reclassify(., rcl=crosswalkHabSuit[, c("LULC_ID", species)])
 
 # Create habitat patch layer ------------------------------------------------------
-suitabilityThreshold <- 60
-patchSizeThreshold <- 1
+patchSizeThreshold <- minPatchSize$MinPatchSizeHa[minPatchSize$Species==species]
 
 #Habitat patch map
 habitatRaster <- Which(suitabilityRaster >= suitabilityThreshold)
@@ -65,7 +69,7 @@ habitatRaster[Which(habitatClump %in% habitatClumpID$value)] <- 0
 # Create resistance layer ---------------------------------------------------------
 # Reclassify
 resistanceRasterReclass <- LULC %>%
-  reclassify(., rcl=crosswalkResist[, c("LULC_ID", "BLBR")])
+  reclassify(., rcl=crosswalkResist[, c("LULC_ID", species)])
 #Overlay habitat patches
 resistanceRasterOverlay <- overlay(resistanceRasterReclass, habitatRaster, fun = function(x,y){return(x+y)})
 #Reclass to assign habitat patches a resistance value = 1 (note that both overlaid values of both 3 and 5 correspond to habitat patches)
@@ -108,15 +112,15 @@ resistanceRasterStudyArea <- resistanceRaster %>%
 # Save outputs ---------------------------------------------------------
 #geotif
 # Focal Area
-writeRaster(suitabilityRasterFocal, file.path(outDir, paste0("BLBR_HabitatSuitability_FocalArea.tif")), overwrite=TRUE)
-writeRaster(habitatRasterFocal, file.path(outDir, paste0("BLBR_HabitatPatch_FocalArea.tif")), overwrite=TRUE)
-writeRaster(resistanceRasterFocal, file.path(outDir, paste0("BLBR_Resistance_FocalArea.tif")), overwrite=TRUE)
+writeRaster(suitabilityRasterFocal, file.path(outDir, paste0(species, "_HabitatSuitability_FocalArea.tif")), overwrite=TRUE)
+writeRaster(habitatRasterFocal, file.path(outDir, paste0(species, "_HabitatPatch_FocalArea.tif")), overwrite=TRUE)
+writeRaster(resistanceRasterFocal, file.path(outDir, paste0(species, "_Resistance_FocalArea.tif")), overwrite=TRUE)
 # Study Area Unbuffered
-writeRaster(suitabilityRasterStudyArea, file.path(outDir, paste0("BLBR_HabitatSuitability_buffer", polygonBufferWidth, "km.tif")), overwrite=TRUE)
-writeRaster(habitatRasterStudyArea, file.path(outDir, paste0("BLBR_HabitatPatch_buffer", polygonBufferWidth, "km.tif")), overwrite=TRUE)
-writeRaster(resistanceRasterStudyArea, file.path(outDir, paste0("BLBR_Resistance_buffer", polygonBufferWidth, "km.tif")), overwrite=TRUE)
+writeRaster(suitabilityRasterStudyArea, file.path(outDir, paste0(species, "_HabitatSuitability_", polygonBufferWidth, "km.tif")), overwrite=TRUE)
+writeRaster(habitatRasterStudyArea, file.path(outDir, paste0(species, "_HabitatPatch_", polygonBufferWidth, "km.tif")), overwrite=TRUE)
+writeRaster(resistanceRasterStudyArea, file.path(outDir, paste0(species, "_Resistance_", polygonBufferWidth, "km.tif")), overwrite=TRUE)
 # Study Area Buffered
-writeRaster(suitabilityRaster, file.path(outDir, paste0("BLBR_HabitatSuitability_buffer", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
-writeRaster(habitatRaster, file.path(outDir, paste0("BLBR_HabitatPatch_buffer", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
-writeRaster(resistanceRaster, file.path(outDir, paste0("BLBR_Resistance_buffer", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
+writeRaster(suitabilityRaster, file.path(outDir, paste0(species, "_HabitatSuitability_", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
+writeRaster(habitatRaster, file.path(outDir, paste0(species, "_HabitatPatch_", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
+writeRaster(resistanceRaster, file.path(outDir, paste0(species, "_Resistance_", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
 
