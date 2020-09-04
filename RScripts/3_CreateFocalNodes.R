@@ -29,7 +29,7 @@ polygonBufferWidth <- 20 # In km
 
 # Read in data
 # Resistance layer
-resistance <- raster(file.path(outDir, paste0("Resistance_buffer", polygonBufferWidth, "km_buffered.tif")))
+resistance <- raster(file.path(outDir, paste0("Generic_Resistance_", polygonBufferWidth, "km_buffered.tif")))
 
 # Create binary study area raster
 studyArea <- resistance

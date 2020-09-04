@@ -43,7 +43,7 @@ ORNRaw <- st_read(file.path(paste0(dataDir, "/Land use land cover/Ontario_Road_N
 OHNRaw <- st_read(file.path(paste0(dataDir, "/Land use land cover/Ontario_Hydro_Network__OHN__-_Waterbody-shp"), "Ontario_Hydro_Network__OHN__-_Waterbody.shp"))
 urbanRaw <- st_read(file.path(paste0(dataDir, "/Land use land cover/Built-Up_Area-shp"), "Built-Up_Area.shp"))
   # Resistance crosswalk
-crosswalk <- read_csv(file.path(paste0(dataDir, "/Resistance"), "ResistanceCrosswalk.csv"))
+crosswalk <- read_csv(file.path(paste0(dataDir, "/Resistance"), "GenericSpeciesResistanceCrosswalk.csv"))
 
 # Create study area -------------------------------------
 # Create spatial polygon from points
@@ -204,9 +204,9 @@ LULC <- LULC_buffer %>%
 
 # Save outputs --------------------------
 # Save intermediate output
-st_write(polygonProjected, file.path(outDir, "polygon_projected.shp"), driver="ESRI Shapefile")
-st_write(studyArea, file.path(outDir, paste0("studyarea_", polygonBufferWidth, "km.shp")), driver="ESRI Shapefile")
-st_write(studyAreaBuffer, file.path(outDir, paste0("studyarea_", polygonBufferWidth, "km_buffered.shp")), driver="ESRI Shapefile")
+st_write(polygonProjected, file.path(outDir, "FocalArea.shp"), driver="ESRI Shapefile")
+st_write(studyArea, file.path(outDir, paste0("StudyArea_", polygonBufferWidth, "km.shp")), driver="ESRI Shapefile")
+st_write(studyAreaBuffer, file.path(outDir, paste0("StudyArea_", polygonBufferWidth, "km_buffered.shp")), driver="ESRI Shapefile")
 # Study Area
 writeRaster(SOLRIS, file.path(outDir, paste0("SOLRIS_", polygonBufferWidth, "km.tif")))
 writeRaster(SOLRIS_rcl, file.path(outDir, paste0("SOLRIS_reclass_", polygonBufferWidth, "km.tif")))
