@@ -24,11 +24,11 @@ options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=
 
 # Directories
 projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
-dataDir <- file.path(projectDir, "Data/Processed")
+dataDir <- file.path(projectDir, "Data/Raw")
 outDir <- file.path(projectDir, "Data/Processed")
 
 # Input parameters
-species <- "BLBR"
+species <- "ODVI"
 polygonBufferWidth <- 20 # In km
 suitabilityThreshold <- 60
 
@@ -37,9 +37,9 @@ suitabilityThreshold <- 60
 LULC <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km.tif")))
 LULC_buffer <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_buffered.tif")))
 # Focal area polygon
-focalArea <- st_read(file.path(dataDir, "FocalArea.shp"))
+focalArea <- st_read(file.path(outDir, "FocalArea.shp"))
 # Study area polygon
-studyArea <- st_read(file.path(dataDir, "studyarea_20km.shp"))
+studyArea <- st_read(file.path(outDir, "studyarea_20km.shp"))
 
 # Tabular data
 crosswalkHabSuit <- read_csv(file.path(paste0(dataDir, "/Focal Species"), "FocalSpeciesHabitatSuitabilityCrosswalk.csv"))
@@ -50,7 +50,7 @@ dispersalDistance <- read_csv(file.path(paste0(dataDir, "/Focal Species"), "Foca
 
 # Create habitat suitability layer  ---------------------------------------------------------
 # Reclassify
-suitabilityRaster <- LULC %>%
+suitabilityRaster <- LULC_buffer %>%
   reclassify(., rcl=crosswalkHabSuit[, c("LULC_ID", species)])
 
 # Create habitat patch layer ------------------------------------------------------
@@ -68,7 +68,7 @@ habitatRaster[Which(habitatClump %in% habitatClumpID$value)] <- 0
 
 # Create resistance layer ---------------------------------------------------------
 # Reclassify
-resistanceRasterReclass <- LULC %>%
+resistanceRasterReclass <- LULC_buffer %>%
   reclassify(., rcl=crosswalkResist[, c("LULC_ID", species)])
 #Overlay habitat patches
 resistanceRasterOverlay <- overlay(resistanceRasterReclass, habitatRaster, fun = function(x,y){return(x+y)})
