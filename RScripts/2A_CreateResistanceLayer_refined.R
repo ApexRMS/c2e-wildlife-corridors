@@ -109,8 +109,13 @@ culvertFocalAreaRed <- culvertFocalArea %>%
 
 
 # Crosswalk table for culverts
-culvertCross <- as.data.frame(culvertFocalAreaRed)[, c("CULV_ID", "ROAD", "OR", "Resistance")]
-write.csv(culvertCross[complete.cases(culvertCross),], file = file.path(outDir, "/CulvertResistanceCrosswalk.csv"), row.names=F)
+culvertCross <- culvertFocalAreaRed %>%
+				as.data.frame() %>%
+				dplyr::select(CULV_ID, ROAD, OR, Resistance) %>%
+				filter_all(all_vars(!is.infinite(.)))
+
+				
+write.csv(culvertCross, file = file.path(outDir, "/CulvertResistanceCrosswalk.csv"), row.names=F)
 
 ## Calculate resistance values for bridges ----------
   # All bridges given resistance value of 10
@@ -118,21 +123,25 @@ write.csv(culvertCross[complete.cases(culvertCross),], file = file.path(outDir, 
 						mutate(Resistance = 10)
 
  # Crosswalk table for bridges
-bridgeCross <- as.data.frame(bridgeFocalAreaRed)[, c("TRF_ID", "STREET", "TYPE", "LENGTH", "Resistance")]
+bridgeCross <- bridgeFocalAreaRed %>%
+				as.data.frame() %>%
+				dplyr::select(TRF_ID, STREET, Resistance) %>%
+				filter_all(all_vars(!is.infinite(.)))
+
 write.csv(bridgeCross, file = file.path(outDir, "/BridgeResistanceCrosswalk.csv"), row.names=F)
 
 ## Convert to raster files ----------
 
 # Create a buffer around culvert and bridge objects.
   # 12m in all directions, to roughly match road buffering
-culvterBuffer <- culvertFocalAreaRed %>%
+culvertBuffer <- culvertFocalAreaRed %>%
 				st_buffer(., 12)
 
 bridgeBuffer <- bridgeFocalAreaRed %>%
 				st_buffer(., 12)
 
 
-culvertRaster <- culvterBuffer %>% 
+culvertRaster <- culvertBuffer %>% 
 				rasterize(., exRaster, field="Resistance") # Rasterize
 
 bridgeRaster <- bridgeBuffer %>% 
