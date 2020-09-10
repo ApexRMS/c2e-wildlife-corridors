@@ -49,7 +49,7 @@ outDir <- file.path(projectDir, "Data/Processed")
 
 
 ## Run for focal species------
-species <- as.character("ODVI")
+species <- as.character("EMBL")
 polygonBufferWidth <- 20 # In km
 suitabilityThreshold <- 60
 
@@ -76,7 +76,6 @@ IICfocal <- MK_dPCIIC(nodes = habitatPatchesFocal,
                 				mask =  habitatPatchesFocal),
                 attribute = NULL,
                 metric = "IIC", 
-                probability = 0.95, 
                 distance_thresholds = maxdist,
                 rasterparallel = T) 
 plot(IICfocal[["dIIC"]]) #Test plot dIIC
@@ -99,11 +98,9 @@ plot(PCfocal[["dPCflux"]]) #Test plot dPCflux
 IIC20 <- MK_dPCIIC(nodes = habitatPatches20km, 
                 distance = list(type = "least-cost", 
                 				resistance = resistance20km, 
-                				mask =  habitatPatches20km,
-                				threshold = maxdist * 5),
+                				mask =  habitatPatches20km),
                 attribute = NULL,
                 metric = "IIC", 
-                probability = 0.95, 
                 distance_thresholds = maxdist,
                 rasterparallel = T) 
 plot(IIC20[["dIIC"]]) #Test plot dIIC
