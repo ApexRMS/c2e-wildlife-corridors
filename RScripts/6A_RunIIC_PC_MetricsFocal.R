@@ -15,24 +15,6 @@
 
 library(Makurhini)
 
-## Test of IIC and fractions measurements from packages -----
-  #Load data
-#data("vegetation_patches", package = "Makurhini")
-#nrow(vegetation_patches)
-# 142
-
-  #IIC
-#IIC <- MK_dPCIIC(nodes = vegetation_patches, attribute = NULL,
- #               distance = list(type = "centroid"),
- #               metric = "IIC", distance_thresholds = 10000) #10 km
-
-  # PC & fractions
-#PC <- MK_dPCIIC(nodes = vegetation_patches, attribute = NULL,
- #               distance = list(type = "centroid"),
- #              metric = "PC", probability = 0.05,
- #              distance_thresholds = 10000)  
-
-
 
 ##--------------------------------------------------------------------------
 ## Test of IIC and fractions measurements for EMBL focal species-----
@@ -49,11 +31,11 @@ outDir <- file.path(projectDir, "Data/Processed")
 
 
 ## Run for focal species------
-species <- as.character("EMBL")
+species <- as.character("ODVI")
 polygonBufferWidth <- 20 # In km
 suitabilityThreshold <- 60
 
-  # Load data
+## Load data
   # Habitat patches
   # Focal 
 habitatPatchesFocal <- raster(file.path(outDir, paste0(species, "_HabitatPatchCont_FocalArea.tif")))
@@ -66,6 +48,8 @@ resistance20km <- raster(file.path(outDir, paste0(species,  "_Resistance_", poly
 # Tabular data
 dispersalDistance <- read_csv(file.path(paste0(dataDir, "/Focal Species"), "FocalSpeciesDispersalDistance.csv"))
 
+  #input parameters
+maxdist <- dispersalDistance[[which(dispersalDistance$Species==species), "Upper", ]]
 
 ## Run with least-cost distances, using resistance values. 
   #Focal area

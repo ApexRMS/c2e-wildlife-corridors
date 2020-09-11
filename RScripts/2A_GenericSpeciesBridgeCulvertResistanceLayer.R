@@ -111,11 +111,11 @@ culvertCross <- culvertFocalAreaRed %>%
 				dplyr::select(CULV_ID, ROAD, OR, Resistance) %>%
 				filter_all(all_vars(!is.infinite(.)))
 				
-write.csv(culvertCross, file = file.path(outDir, "/CulvertResistanceCrosswalk.csv"), row.names=F)
+write.csv(culvertCross, file = file.path(dataDir, "/Resistance/GenericSpeciesCulvertResistanceCrosswalk.csv"), row.names=F)
 
 ## Calculate resistance values for bridges ----------
   # All bridges given resistance value of 10
-  bridgeFocalAreaRed <- bridgeFocalArea %>% 
+bridgeFocalAreaRed <- bridgeFocalArea %>% 
 						mutate(Resistance = 10)
 
  # Crosswalk table for bridges
@@ -124,7 +124,7 @@ bridgeCross <- bridgeFocalAreaRed %>%
 				dplyr::select(TRF_ID, STREET, Resistance) %>%
 				filter_all(all_vars(!is.infinite(.)))
 
-write.csv(bridgeCross, file = file.path(outDir, "/BridgeResistanceCrosswalk.csv"), row.names=F)
+write.csv(bridgeCross, file = file.path(dataDir, "/Resistance/GenericSpecesBridgeResistanceCrosswalk.csv"), row.names=F)
 
 ## Convert to raster files ----------
 
@@ -144,18 +144,17 @@ bridgeRaster <- bridgeBuffer %>%
 				rasterize(., focalResistance, field="Resistance") # Rasterize
 
 #combine rasters by selecting min resistance value per cell
-combinedRaster <-	bridgeBuffer[bridgeRaster ]
 resistanceStack <- stack(focalResistance, culvertRaster, bridgeRaster)
 combinedRaster  <- min(resistanceStack, na.rm=TRUE)
 
 
-# Save outputs --------------------------
+## Save outputs --------------------------
   # Polygons
 st_write(bridgeFocalAreaRed, file.path(outDir, "allBridges.shp"), driver="ESRI Shapefile", overwrite=T, append=F)
 st_write(culvertFocalArea, file.path(outDir, "allCulverts.shp"), driver="ESRI Shapefile", overwrite=T, append=F)  
 st_write(culvertFocalAreaRed, file.path(outDir, "suitableCulverts.shp"), driver="ESRI Shapefile", overwrite=T, append=F)
   # Rasters of resistance
-writeRaster(culvertRaster, file.path(outDir, "culvertResistance_20km_buffered.tif"), overwrite=T)
-writeRaster(bridgeRaster, file.path(outDir, "bridgeResistance_20km_buffered.tif"), overwrite=T)
-writeRaster(combinedRaster, file.path(outDir, "GenericResistanceRasterRefinedFocal.tif"), overwrite=T)
+writeRaster(culvertRaster, file.path(outDir, "GenericSpeciesCulvertResistanceFocal.tif"), overwrite=T)
+writeRaster(bridgeRaster, file.path(outDir, "GenericSpeciesBridgeResistanceFocal.tif"), overwrite=T)
+writeRaster(combinedRaster, file.path(outDir, "GenericSpeciesResistanceRasterFocal.tif"), overwrite=T)
 

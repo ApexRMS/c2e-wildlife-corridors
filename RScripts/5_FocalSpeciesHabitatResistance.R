@@ -72,10 +72,11 @@ habitatRasterCont <- clump(habitatRaster) #creates raster with ID's for all patc
 # Reclassify
 resistanceRasterReclass <- LULC_buffer %>%
   reclassify(., rcl=crosswalkResist[, c("LULC_ID", species)])
+
 #Overlay habitat patches
-resistanceRasterOverlay <- overlay(resistanceRasterReclass, habitatRaster, fun = function(x,y){return(x+y)})
+resistanceRaster <- overlay(resistanceRasterReclass, habitatRaster, fun = function(x,y){return(ifelse(y==1, 1, x))})
 #Reclass to assign habitat patches a resistance value = 1 (note that both overlaid values of both 3 and 5 correspond to habitat patches)
-resistanceRaster <- reclassify(resistanceRasterOverlay, rcl = matrix(c(3, 1, 5, 1), ncol=2, byrow = T))
+#resistanceRaster <- reclassify(resistanceRasterOverlay, rcl = matrix(c(3, 1, 5, 1, 7, 1, 9, 1), ncol=2, byrow = T))
 
 # Crop to focal region and study area
 # Focal Area
