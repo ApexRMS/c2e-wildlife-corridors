@@ -196,17 +196,22 @@ st_write(bridgeFocalAreaRed, file.path(outDir, "allBridgesFocal.shp"), driver="E
 st_write(culvertFocalArea, file.path(outDir, "allCulvertsFocal.shp"), driver="ESRI Shapefile")  
 st_write(culvertFocalAreaRed, file.path(outDir, "suitableCulvertsFocal.shp"), driver="ESRI Shapefile")
 
-  # Rasters of resistance (Study Area buffered)
+  # Geotifs
+    # Rasters of resistance (Study Area buffered)
 writeRaster(culvertRaster, file.path(outDir, "Generic_ResistanceCulvert_20km.tif"), overwrite=T)
 writeRaster(bridgeRaster, file.path(outDir, "Generic_ResistanceBridge_20km.tif"), overwrite=T)
 writeRaster(combinedRaster, file.path(outDir, "Generic_ResistanceCulvertBridge_20km.tif"), overwrite=T)
 
-# Rasters of resistance (Study Area)
+    # Rasters of resistance (Study Area)
 writeRaster(culvertRasterStudyArea, file.path(outDir, "Generic_ResistanceCulvert_20km.tif"), overwrite=T)
 writeRaster(bridgeRasterStudyArea, file.path(outDir, "Generic_ResistanceBridge_20km.tif"), overwrite=T)
 writeRaster(combinedRasterStudyArea, file.path(outDir, "Generic_ResistanceCulvertBridge_20km.tif"), overwrite=T)
 
-  # Rasters of resistance (Focal Area)
+    # Rasters of resistance (Focal Area)
 writeRaster(culvertRasterFocal, file.path(outDir, "Generic_ResistanceCulvert_FocalArea.tif"), overwrite=T)
 writeRaster(bridgeRasterFocal, file.path(outDir, "Generic_ResistanceBridge_FocalArea.tif"), overwrite=T)
 writeRaster(combinedRasterFocal, file.path(outDir, "Generic_ResistanceCulvertBridge_FocalArea.tif"), overwrite=T)
+
+  # ASCII
+    # Rasters of resistance (Study Area buffered)
+writeRaster(combinedRaster, file.path(outDir, "Generic_ResistanceCulvertBridge_20km.asc"), overwrite=T)

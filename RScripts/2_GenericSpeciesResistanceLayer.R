@@ -63,7 +63,5 @@ writeRaster(resistanceFocal, file.path(outDir, "Generic_Resistance_FocalArea.tif
 writeRaster(resistance, file.path(outDir, paste0("Generic_Resistance_", polygonBufferWidth, "km.tif")), overwrite=TRUE)
 writeRaster(resistance_buffer, file.path(outDir, paste0("Generic_Resistance_", polygonBufferWidth, "km_buffer.tif")), overwrite=TRUE)
 #asc
-writeRaster(resistanceFocal, file.path(outDir, paste0("Generic_Resistance_FocalArea.asc")), overwrite=TRUE)
-writeRaster(resistance, file.path(outDir, paste0("Generic_Resistance_", polygonBufferWidth, "km.asc")), overwrite=TRUE)
 writeRaster(resistance_buffer, file.path(outDir, paste0("Generic_Resistance_", polygonBufferWidth, "km_buffer.asc")), overwrite=TRUE)
 
