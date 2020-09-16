@@ -29,7 +29,8 @@ library(stringr)
 
 ## Set up -----
 	# Directories
-projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment/"
+# projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment/"  #CT
+projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"  #BR
 dataDir <- file.path(projectDir, "Data/Raw")
 outDir <- file.path(projectDir, "Data/Processed")
 
@@ -44,8 +45,8 @@ ORcirc <- function(length, width){(pi * (0.5*width/1000)^2) / (length)}
 ORbox <- function(length, width, height){((height/1000) * (width/1000)) / (length)}
 
 
-# Read in raster output example to have for resolution details (probably not necessary?)
-exRaster <- raster(paste0(outDir, "/Resistance_buffer20km_buffered.tif"))
+# Read in raster output example to have for resolution details 
+genericResistanceRaster <- raster(file.path(outDir, "Generic_Resistance_buffer20km_buffered.tif"))
 
 
 ## Read in data & process -----------
@@ -57,10 +58,10 @@ focalAreaPolygon <- st_read(file.path(outDir, "FocalArea.shp")) # Study area pol
   #crosswalk <- read_csv(file.path(dataDir, "ResistanceCrosswalk.csv"))
   
   	#Culverts
-culvertPoints <- st_read(paste0(file.path(dataDir, "C2E_Culverts/"), "C2E_Culverts.shp"))
+culvertPoints <- st_read(file.path(paste0(dataDir, "/Land use land cover/C2E_Culverts"), "C2E_Culverts.shp"))
   
   	#Bridges
-bridgePoints <- st_read(paste0(file.path(dataDir, "C2E_Bridges/"), "C2E_Bridges.shp"))
+bridgePoints <- st_read(file.path(paste0(dataDir, "/Land use land cover/C2E_Bridges"), "C2E_Bridges.shp"))
   
   	#Extract bridge length from "Description" column, unit=meters 
 bridgePoints$LENGTH <-  bridgePoints$DESCRIPTIO %>% 
@@ -110,7 +111,7 @@ culvertFocalAreaRed <- culvertFocalArea %>%
 
 # Crosswalk table for culverts
 culvertCross <- as.data.frame(culvertFocalAreaRed)[, c("CULV_ID", "ROAD", "OR", "Resistance")]
-write.csv(culvertCross[complete.cases(culvertCross),], file = file.path(outDir, "/CulvertResistanceCrosswalk.csv"), row.names=F)
+write.csv(culvertCross[complete.cases(culvertCross),], file = file.path(outDir, "CulvertResistanceCrosswalk.csv"), row.names=F)
 
 ## Calculate resistance values for bridges ----------
   # All bridges given resistance value of 10
@@ -119,25 +120,29 @@ write.csv(culvertCross[complete.cases(culvertCross),], file = file.path(outDir, 
 
  # Crosswalk table for bridges
 bridgeCross <- as.data.frame(bridgeFocalAreaRed)[, c("TRF_ID", "STREET", "TYPE", "LENGTH", "Resistance")]
-write.csv(bridgeCross, file = file.path(outDir, "/BridgeResistanceCrosswalk.csv"), row.names=F)
+write.csv(bridgeCross, file = file.path(outDir, "BridgeResistanceCrosswalk.csv"), row.names=F)
 
 ## Convert to raster files ----------
 
 # Create a buffer around culvert and bridge objects.
   # 12m in all directions, to roughly match road buffering
-culvterBuffer <- culvertFocalAreaRed %>%
+culvertBuffer <- culvertFocalAreaRed %>%
 				st_buffer(., 12)
 
 bridgeBuffer <- bridgeFocalAreaRed %>%
 				st_buffer(., 12)
 
 
-culvertRaster <- culvterBuffer %>% 
-				rasterize(., exRaster, field="Resistance") # Rasterize
+culvertResistanceRaster <- culvertBuffer %>% 
+				rasterize(., genericResistanceRaster, field="Resistance") # Rasterize
 
-bridgeRaster <- bridgeBuffer %>% 
-				rasterize(., exRaster, field="Resistance") # Rasterize
+bridgeResistanceRaster <- bridgeBuffer %>% 
+				rasterize(., genericResistanceRaster, field="Resistance") # Rasterize
 				
+
+# Impose culvert and bridge resistance onto generic species resistance map
+genericBridgeCulvertResistanceRaster <- 
+
 
 # Save outputs --------------------------
   # Polygons
@@ -145,5 +150,5 @@ st_write(bridgeFocalAreaRed, file.path(outDir, "allBridges.shp"), driver="ESRI S
 st_write(culvertFocalArea, file.path(outDir, "allCulverts.shp"), driver="ESRI Shapefile", overwrite=T, append=F)  
 st_write(culvertFocalAreaRed, file.path(outDir, "suitableCulverts.shp"), driver="ESRI Shapefile", overwrite=T, append=F)
   # Rasters of resistance
-writeRaster(culvertRaster, file.path(outDir, "culvertResistance_20km_buffered.tif"), overwrite=T)
-writeRaster(bridgeRaster, file.path(outDir, "bridgeResistance_20km_buffered.tif"), overwrite=T)
+writeRaster(culvertResistanceRaster, file.path(outDir, "culvertResistance_20km_buffered.tif"), overwrite=T)
+writeRaster(bridgeResistanceRaster, file.path(outDir, "bridgeResistance_20km_buffered.tif"), overwrite=T)
