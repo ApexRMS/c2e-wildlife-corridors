@@ -1,4 +1,4 @@
-%#####################################################################
+######################################################################
 # a233 Royal Botanical Gardens Wildlife Corridor Mapping            #
 # Create resistance surface                                         #
 #                                                                   #
@@ -21,24 +21,27 @@ library(sf)
 options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=10)
 
   # Directories
-#projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
-projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment/" #CT
-dataDir <- file.path(projectDir, "Data/Raw")
-outDir <- file.path(projectDir, "Data/Processed")
+projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233" #BR
+#projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment/" #CT
+dataDir <- paste0(projectDir, "/Data/Raw")
+outDir <- paste0(projectDir, "/Data/Processed")
 
   # Input parameters
 polygonBufferWidth <- 20 # In km
 
 ## Read in data
   # Combined LULC layers
-LULC <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km.tif")))
-LULC_buffer <- raster(file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_buffered.tif")))
+LULC <- raster(file.path(outDir, 
+                         paste0("LULC_", polygonBufferWidth, "km.tif")))
+LULC_buffer <- raster(file.path(outDir, 
+                                paste0("LULC_", polygonBufferWidth, "km_buffered.tif")))
   #Focal area polygon
 focalArea <- st_read(file.path(outDir, "FocalArea.shp")) # Study area polygon
 
  # Tabular data
    # Resistance crosswalk
-crosswalk <- read_csv(file.path(paste0(dataDir, "/Resistance"), "GenericResistanceCrosswalk.csv"))
+crosswalk <- read_csv(file.path(paste0(dataDir, "/Resistance"), 
+                                "GenericSpeciesResistanceCrosswalk.csv"))
 
 ## Create resistance layer  ---------------------------------------------------------
   # Reclassify
@@ -56,11 +59,11 @@ resistanceFocal <- resistance %>%
 
 # Save outputs ---------------------------------------------------------
 #geotif
-writeRaster(resistance, file.path(outDir, paste0("GenericResistanceFocal.tif")), overwrite=TRUE)
-writeRaster(resistance, file.path(outDir, paste0("GenericResistance_", polygonBufferWidth, "km.tif")), overwrite=TRUE)
-writeRaster(resistance_buffer, file.path(outDir, paste0("GenericResistance_", polygonBufferWidth, "km_buffer.tif")), overwrite=TRUE)
+writeRaster(resistanceFocal, file.path(outDir, "Generic_Resistance_FocalArea.tif"), overwrite=TRUE)
+writeRaster(resistance, file.path(outDir, paste0("Generic_Resistance_", polygonBufferWidth, "km.tif")), overwrite=TRUE)
+writeRaster(resistance_buffer, file.path(outDir, paste0("Generic_Resistance_", polygonBufferWidth, "km_buffer.tif")), overwrite=TRUE)
 #asc
-writeRaster(resistance, file.path(outDir, paste0("GenericResistanceFocal.asc")), overwrite=TRUE)
-writeRaster(resistance, file.path(outDir, paste0("GenericResistance_", polygonBufferWidth, "km.asc")), overwrite=TRUE)
-writeRaster(resistance_buffer, file.path(outDir, paste0("GenericResistance_", polygonBufferWidth, "km_buffer.asc")), overwrite=TRUE)
+writeRaster(resistanceFocal, file.path(outDir, paste0("Generic_Resistance_FocalArea.asc")), overwrite=TRUE)
+writeRaster(resistance, file.path(outDir, paste0("Generic_Resistance_", polygonBufferWidth, "km.asc")), overwrite=TRUE)
+writeRaster(resistance_buffer, file.path(outDir, paste0("Generic_Resistance_", polygonBufferWidth, "km_buffer.asc")), overwrite=TRUE)
 

@@ -29,9 +29,10 @@ library(stringr)
 
 ## Set up workspace -------------------------------------------------------
 	# Directories
-projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment" #CT
-dataDir <- file.path(projectDir, "Data/Raw")
-outDir <- file.path(projectDir, "Data/Processed")
+#projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment" #CT
+projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233" #BR
+dataDir <- paste0(projectDir, "/Data/Raw")
+outDir <- paste0(projectDir, "/Data/Processed")
 
   # Settings
 options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=10)
@@ -46,19 +47,23 @@ ORcirc <- function(length, width){(pi * (0.5*width/1000)^2) / (length)}
 ORbox <- function(length, width, height){((height/1000) * (width/1000)) / (length)}
 
 
-  # Read in raster output example to have for resolution details (probably not necessary?)
-focalResistance <- raster(file.path(paste0(outDir, "/GenericResistanceFocal.tif")))
+  # Read in generic resistance raster
+genericResistanceBuffer <- raster(file.path(outDir, "Generic_Resistance_20km_buffered.tif"))
+
 
 ## Read in data  -------------------------------------------------------
   # Study area - the polygon that encompases the Cootes to Escarpment EcoPark System
   # Projected file is our desired projection (see 1_StudyAreaLULCL)
 focalAreaPolygon <- st_read(file.path(outDir, "FocalArea.shp")) # Study area polygon
-  
+studyAreaPolygon <- st_read(file.path(outDir, "StudyArea_20km.shp")) # Study area polygon
+
   # Culverts
-culvertPoints <- st_read(paste0(file.path(dataDir, "C2E_Culverts/"), "C2E_Culverts.shp"))
+culvertPoints <- st_read(file.path(paste0(dataDir, "/Land use land cover/C2E_Culverts"),
+                                   "C2E_Culverts.shp"))
   
   # Bridges
-bridgePoints <- st_read(paste0(file.path(dataDir, "C2E_Bridges/"), "C2E_Bridges.shp"))
+bridgePoints <- st_read(file.path(paste0(dataDir, "/Land use land cover/C2E_Bridges/"),
+                                  "C2E_Bridges.shp"))
   
 ## Process bridge and culvert data to have same extent and projection as resistance layer
   # Extract bridge length from "Description" column, unit=meters 
@@ -112,7 +117,8 @@ culvertCross <- culvertFocalAreaRed %>%
 				dplyr::select(CULV_ID, ROAD, OR, Resistance) %>%
 				filter_all(all_vars(!is.infinite(.)))
 				
-write.csv(culvertCross, file = file.path(dataDir, "/Resistance/GenericCulvertResistanceCrosswalk.csv"), row.names=F)
+write.csv(culvertCross, file = file.path(paste0(dataDir, "/Resistance"), 
+                                         "GenericCulvertResistanceCrosswalk.csv"), row.names=F)
 
 ## Calculate resistance values for bridges ------------------------------------------------------
   # All bridges given resistance value of 10
@@ -125,7 +131,8 @@ bridgeCross <- bridgeFocalAreaRed %>%
 				dplyr::select(TRF_ID, STREET, Resistance) %>%
 				filter_all(all_vars(!is.infinite(.)))
 
-write.csv(bridgeCross, file = file.path(dataDir, "/Resistance/GenericBridgeResistanceCrosswalk.csv"), row.names=F)
+write.csv(bridgeCross, file = file.path(paste0(dataDir, "/Resistance"), 
+                                        "GenericBridgeResistanceCrosswalk.csv"), row.names=F)
 
 ## Convert to raster files ------------------------------------------------------
 
@@ -139,24 +146,67 @@ bridgeBuffer <- bridgeFocalAreaRed %>%
 
 
 culvertRaster <- culvertBuffer %>% 
-				rasterize(., focalResistance, field="Resistance") # Rasterize
+				rasterize(., genericResistanceBuffer, field="Resistance") # Rasterize
 
 bridgeRaster <- bridgeBuffer %>% 
-				rasterize(., focalResistance, field="Resistance") # Rasterize
+				rasterize(., genericResistanceBuffer, field="Resistance") # Rasterize
 
 ## Combine rasters by selecting min resistance value per cell
-resistanceStack <- stack(focalResistance, culvertRaster, bridgeRaster)
+resistanceStack <- stack(genericResistanceBuffer, culvertRaster, bridgeRaster)
 combinedRaster  <- min(resistanceStack, na.rm=TRUE)
+
+
+# Crop to study area
+culvertRasterStudyArea <- culvertRaster %>%
+  crop(., extent(studyAreaPolygon), snap="out") %>% # Crop to focal area extent
+  mask(., mask=studyAreaPolygon) %>% # Clip to focal area
+  trim(.) # Trim extra white spaces
+
+bridgeRasterStudyArea  <- bridgeRaster %>%
+  crop(., extent(studyAreaPolygon), snap="out") %>% # Crop to focal area extent
+  mask(., mask=studyAreaPolygon) %>% # Clip to focal area
+  trim(.) # Trim extra white spaces
+
+combinedRasterStudyArea  <- combinedRaster %>%
+  crop(., extent(studyAreaPolygon), snap="out") %>% # Crop to focal area extent
+  mask(., mask=studyAreaPolygon) %>% # Clip to focal area
+  trim(.) # Trim extra white spaces
+
+
+# Crop to focal area
+culvertRasterFocal <- culvertRaster %>%
+  crop(., extent(focalAreaPolygon), snap="out") %>% # Crop to focal area extent
+  mask(., mask=focalAreaPolygon) %>% # Clip to focal area
+  trim(.) # Trim extra white spaces
+
+bridgeRasterFocal  <- bridgeRaster %>%
+  crop(., extent(focalAreaPolygon), snap="out") %>% # Crop to focal area extent
+  mask(., mask=focalAreaPolygon) %>% # Clip to focal area
+  trim(.) # Trim extra white spaces
+
+combinedRasterFocal  <- combinedRaster %>%
+  crop(., extent(focalAreaPolygon), snap="out") %>% # Crop to focal area extent
+  mask(., mask=focalAreaPolygon) %>% # Clip to focal area
+  trim(.) # Trim extra white spaces
 
 
 ## Save outputs ------------------------------------------------------
   # Polygons
-st_write(bridgeFocalAreaRed, file.path(outDir, "allBridgesFocal.shp"), driver="ESRI Shapefile", overwrite=T, append=F)
-st_write(culvertFocalArea, file.path(outDir, "allCulvertsFocal.shp"), driver="ESRI Shapefile", overwrite=T, append=F)  
-st_write(culvertFocalAreaRed, file.path(outDir, "suitableCulvertsFocal.shp"), driver="ESRI Shapefile", overwrite=T, append=F)
+st_write(bridgeFocalAreaRed, file.path(outDir, "allBridgesFocal.shp"), driver="ESRI Shapefile")
+st_write(culvertFocalArea, file.path(outDir, "allCulvertsFocal.shp"), driver="ESRI Shapefile")  
+st_write(culvertFocalAreaRed, file.path(outDir, "suitableCulvertsFocal.shp"), driver="ESRI Shapefile")
 
-  # Rasters of resistance
-writeRaster(culvertRaster, file.path(outDir, "GenericCulvertResistanceFocal.tif"), overwrite=T)
-writeRaster(bridgeRaster, file.path(outDir, "GenericBridgeResistanceFocal.tif"), overwrite=T)
-writeRaster(combinedRaster, file.path(outDir, "GenericRefinedResistanceFocal.tif"), overwrite=T)
+  # Rasters of resistance (Study Area buffered)
+writeRaster(culvertRaster, file.path(outDir, "Generic_ResistanceCulvert_20km.tif"), overwrite=T)
+writeRaster(bridgeRaster, file.path(outDir, "Generic_ResistanceBridge_20km.tif"), overwrite=T)
+writeRaster(combinedRaster, file.path(outDir, "Generic_ResistanceCulvertBridge_20km.tif"), overwrite=T)
 
+# Rasters of resistance (Study Area)
+writeRaster(culvertRasterStudyArea, file.path(outDir, "Generic_ResistanceCulvert_20km.tif"), overwrite=T)
+writeRaster(bridgeRasterStudyArea, file.path(outDir, "Generic_ResistanceBridge_20km.tif"), overwrite=T)
+writeRaster(combinedRasterStudyArea, file.path(outDir, "Generic_ResistanceCulvertBridge_20km.tif"), overwrite=T)
+
+  # Rasters of resistance (Focal Area)
+writeRaster(culvertRasterFocal, file.path(outDir, "Generic_ResistanceCulvert_FocalArea.tif"), overwrite=T)
+writeRaster(bridgeRasterFocal, file.path(outDir, "Generic_ResistanceBridge_FocalArea.tif"), overwrite=T)
+writeRaster(combinedRasterFocal, file.path(outDir, "Generic_ResistanceCulvertBridge_FocalArea.tif"), overwrite=T)
