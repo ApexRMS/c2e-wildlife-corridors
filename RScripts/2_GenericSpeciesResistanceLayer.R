@@ -15,13 +15,14 @@
   # Packages
 library(tidyverse)
 library(raster)
+library(sf)
 
   # Settings
 options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=10)
 
   # Directories
 #projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
-projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment/"
+projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment/" #CT
 dataDir <- file.path(projectDir, "Data/Raw")
 outDir <- file.path(projectDir, "Data/Processed")
 
@@ -37,7 +38,7 @@ focalArea <- st_read(file.path(outDir, "FocalArea.shp")) # Study area polygon
 
  # Tabular data
    # Resistance crosswalk
-crosswalk <- read_csv(file.path(paste0(dataDir, "/Resistance"), "GenericSpeciesResistanceCrosswalk.csv"))
+crosswalk <- read_csv(file.path(paste0(dataDir, "/Resistance"), "GenericResistanceCrosswalk.csv"))
 
 ## Create resistance layer  ---------------------------------------------------------
   # Reclassify
