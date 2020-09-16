@@ -46,7 +46,7 @@ resistanceBridgeFocal <- raster(file.path(procDataDir,  "GenericBridgeResistance
 resistanceCulvertsFocal <- raster(file.path(procDataDir,  "GenericCulvertResistanceFocal.tif"))
 
   # Tabular data
-dispersalDistance <- read_csv(file.path(paste0(dataDir, "/Focal Species"), "FocalSpeciesDispersalDistance.csv"))
+dispersalDistance <- read_csv(file.path(paste0(rawDataDir, "/Focal Species"), "FocalSpeciesDispersalDistance.csv"))
 
   #input parameters
 maxdist <- suppressWarnings(dispersalDistance[[which(dispersalDistance$Species==species), "Upper", ]])
@@ -95,3 +95,5 @@ PCfocal <- MK_dPCIIC(nodes = habitatPatchesFocal,
 ## Save rasters
   # Focal area
 writeRaster(PCfocal, file.path(outDir, paste0(species, "_PC_FocalAreaCulvertsBridges.tif")), overwrite=TRUE)
+writeRaster(combinedRaster, file.path(procDataDir, paste0(species, "_RefinedResistanceFocalArea.tif")), overwrite=TRUE)
+
