@@ -23,12 +23,12 @@ library(sf)
 options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=10)
 
 # Directories
-projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
+projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment"
 dataDir <- file.path(projectDir, "Data/Raw")
 outDir <- file.path(projectDir, "Data/Processed")
 
 # Input parameters
-species <- "ODVI"
+species <- "EMBL"
 polygonBufferWidth <- 20 # In km
 suitabilityThreshold <- 60
 
@@ -57,7 +57,7 @@ suitabilityRaster <- LULC_buffer %>%
 patchSizeThreshold <- minPatchSize$MinPatchSizeHa[minPatchSize$Species==species]
 
 #Habitat patch map
-habitatRaster <- Which(suitabilityRaster >= suitabilityThreshold)
+habitatRaster <- Which(suitabilityRaster >= suitabilityThreshold) #habitats above suitability threshold
 #convert from hectares to m
 conversionFromHa <- res(habitatRaster)[1]*res(habitatRaster)[2]*(1/10000)
 habitatClump <- clump(habitatRaster)
@@ -65,15 +65,18 @@ habitatClumpID <- data.frame(freq(habitatClump))
 #Remove clump observations with frequency smaller than minimum habitat patch size (ha)
 habitatClumpID <- habitatClumpID[habitatClumpID$count < patchSizeThreshold/conversionFromHa,]
 habitatRaster[Which(habitatClump %in% habitatClumpID$value)] <- 0
+habitatRasterCont <- clump(habitatRaster) #creates raster with ID's for all patches > min threshold & > suitability threshold
+
 
 # Create resistance layer ---------------------------------------------------------
 # Reclassify
 resistanceRasterReclass <- LULC_buffer %>%
   reclassify(., rcl=crosswalkResist[, c("LULC_ID", species)])
+
 #Overlay habitat patches
-resistanceRasterOverlay <- overlay(resistanceRasterReclass, habitatRaster, fun = function(x,y){return(x+y)})
+resistanceRaster <- overlay(resistanceRasterReclass, habitatRaster, fun = function(x,y){return(ifelse(y==1, 1, x))})
 #Reclass to assign habitat patches a resistance value = 1 (note that both overlaid values of both 3 and 5 correspond to habitat patches)
-resistanceRaster <- reclassify(resistanceRasterOverlay, rcl = matrix(c(3, 1, 5, 1), ncol=2, byrow = T))
+#resistanceRaster <- reclassify(resistanceRasterOverlay, rcl = matrix(c(3, 1, 5, 1, 7, 1, 9, 1), ncol=2, byrow = T))
 
 # Crop to focal region and study area
 # Focal Area
@@ -83,6 +86,11 @@ suitabilityRasterFocal <- suitabilityRaster %>%
   trim(.) # Trim extra white spaces  
 
 habitatRasterFocal <- habitatRaster %>%
+  crop(., extent(focalArea), snap="out") %>% # Crop to focal area extent
+  mask(., mask=focalArea) %>% # Clip to focal area
+  trim(.) # Trim extra white spaces
+
+habitatRasterContFocal <- habitatRasterCont %>%
   crop(., extent(focalArea), snap="out") %>% # Crop to focal area extent
   mask(., mask=focalArea) %>% # Clip to focal area
   trim(.) # Trim extra white spaces
@@ -103,6 +111,11 @@ habitatRasterStudyArea <- habitatRaster %>%
   mask(., mask=studyArea) %>% # Clip to focal area
   trim(.) # Trim extra white spaces
 
+habitatRasterContStudyArea <- habitatRasterCont %>%
+  crop(., extent(studyArea), snap="out") %>% # Crop to focal area extent
+  mask(., mask=studyArea) %>% # Clip to focal area
+  trim(.) # Trim extra white spaces
+
 resistanceRasterStudyArea <- resistanceRaster %>%
   crop(., extent(studyArea), snap="out") %>% # Crop to focal area extent
   mask(., mask=studyArea) %>% # Clip to focal area
@@ -114,13 +127,16 @@ resistanceRasterStudyArea <- resistanceRaster %>%
 # Focal Area
 writeRaster(suitabilityRasterFocal, file.path(outDir, paste0(species, "_HabitatSuitability_FocalArea.tif")), overwrite=TRUE)
 writeRaster(habitatRasterFocal, file.path(outDir, paste0(species, "_HabitatPatch_FocalArea.tif")), overwrite=TRUE)
+writeRaster(habitatRasterContFocal, file.path(outDir, paste0(species, "_HabitatPatchCont_FocalArea.tif")), overwrite=TRUE)
 writeRaster(resistanceRasterFocal, file.path(outDir, paste0(species, "_Resistance_FocalArea.tif")), overwrite=TRUE)
+
 # Study Area Unbuffered
 writeRaster(suitabilityRasterStudyArea, file.path(outDir, paste0(species, "_HabitatSuitability_", polygonBufferWidth, "km.tif")), overwrite=TRUE)
 writeRaster(habitatRasterStudyArea, file.path(outDir, paste0(species, "_HabitatPatch_", polygonBufferWidth, "km.tif")), overwrite=TRUE)
+writeRaster(habitatRasterContStudyArea, file.path(outDir, paste0(species, "_HabitatPatchCont_",  polygonBufferWidth, "km.tif")), overwrite=TRUE)
 writeRaster(resistanceRasterStudyArea, file.path(outDir, paste0(species, "_Resistance_", polygonBufferWidth, "km.tif")), overwrite=TRUE)
+
 # Study Area Buffered
-writeRaster(suitabilityRaster, file.path(outDir, paste0(species, "_HabitatSuitability_", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
 writeRaster(habitatRaster, file.path(outDir, paste0(species, "_HabitatPatch_", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
 writeRaster(resistanceRaster, file.path(outDir, paste0(species, "_Resistance_", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
 
