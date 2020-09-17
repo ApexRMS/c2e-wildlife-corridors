@@ -234,3 +234,11 @@ writeRaster(urban_rcl_buffer, file.path(outDir, paste0("Urban_reclass_", polygon
 writeRaster(LULC, file.path(outDir, paste0("LULC_", polygonBufferWidth, "km.tif")))
 writeRaster(LULC_buffer, file.path(outDir, paste0("LULC_", polygonBufferWidth, "km_buffered.tif")), overwrite=TRUE)
 
+
+
+
+### Add on to get major roads shapefile
+orn <- st_read("~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment/Data/Processed/ORN_20km.shp")
+ornMajor <- orn[(orn$ROAD_CLASS != ("Local / Street") &  orn$ROAD_CLASS != ("Local / Strata")), ]
+st_write(ornMajor, file.path(outDir, paste0("ORNMajor_", polygonBufferWidth, "km.shp")), delete_layer=TRUE)
+
