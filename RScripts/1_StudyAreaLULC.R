@@ -225,6 +225,24 @@ ORN_rcl <- ORN_rcl_buffer %>%
   mask(., mask=studyArea) %>% # Clip to study area
   trim(.) # Trim extra white spaces
 
+  # ORN Major
+ORNMajor <- ORN_bufferMajor %>%
+  st_intersection(., studyArea) # Clip to study area
+
+ORN_rclMajor <- ORN_rcl_bufferMajor %>%
+  crop(., extent(studyArea), snap="out") %>% # Crop SOLRIS to study area extent
+  mask(., mask=studyArea) %>% # Clip to study area
+  trim(.) # Trim extra white spaces
+
+  # ORN Minor
+ORNMinor <- ORN_bufferMinor %>%
+  st_intersection(., studyArea) # Clip to study area
+
+ORN_rclMinor <- ORN_rcl_bufferMinor %>%
+  crop(., extent(studyArea), snap="out") %>% # Crop SOLRIS to study area extent
+  mask(., mask=studyArea) %>% # Clip to study area
+  trim(.) # Trim extra white spaces
+
   # Urban
 urban <- urban_buffer %>%
   st_intersection(., studyArea) # Clip to study area
@@ -233,6 +251,7 @@ urban_rcl <- urban_rcl_buffer %>%
   crop(., extent(studyArea), snap="out") %>% # Crop SOLRIS to study area extent
   mask(., mask=studyArea) %>% # Clip to study area
   trim(.) # Trim extra white spaces
+
 
   # LULC
 LULC <- LULC_buffer %>%
@@ -288,7 +307,25 @@ ORN_rcl_Focal <- ORN_rcl_buffer %>%
   crop(., extent(polygonProjected), snap="out") %>% # Crop SOLRIS to study area extent
   mask(., mask= polygonProjected) %>% # Clip to study area
   trim(.) # Trim extra white spaces
+  
+  # ORN Major
+ORNMajor_Focal <- ORN_bufferMajor %>%
+  st_intersection(., polygonProjected) # Clip to study area
 
+ORN_rclMajor_Focal <- ORN_rcl_bufferMajor %>%
+  crop(., extent(polygonProjected), snap="out") %>% # Crop SOLRIS to study area extent
+  mask(., mask= polygonProjected) %>% # Clip to study area
+  trim(.) # Trim extra white spaces
+
+  # ORN Minor
+ORNMinor_Focal <- ORN_bufferMinor %>%
+  st_intersection(., polygonProjected) # Clip to study area
+
+ORN_rclMinor_Focal <- ORN_rcl_bufferMinor %>%
+  crop(., extent(polygonProjected), snap="out") %>% # Crop SOLRIS to study area extent
+  mask(., mask= polygonProjected) %>% # Clip to study area
+  trim(.) # Trim extra white spaces
+ 
   # Urban
 urban_Focal <- urban_buffer %>%
   st_intersection(., polygonProjected) # Clip to study area
@@ -345,6 +382,12 @@ writeRaster(OLCDB_rcl_Focal,
 writeRaster(ORN_rcl_Focal, 
 				file.path(outDir, "ORN_reclass_FocalArea.tif"),
 				overwrite = TRUE)
+writeRaster(ORN_rclMajor, 
+				file.path(outDir, "ORNMajor_reclass_FocalArea.tif"),
+				overwrite = TRUE)	
+writeRaster(ORN_rclMinor, 
+				file.path(outDir, "ORNMinor_reclass_FocalArea.tif"),
+				overwrite = TRUE)								
 writeRaster(OHN_rcl_Focal, 
 				file.path(outDir, "OHN_reclass_FocalArea.tif"),
 				overwrite = TRUE)
@@ -357,6 +400,14 @@ st_write(ORN_Focal,
 				file.path(outDir,"ORN_FocalArea.shp"), 
 				driver="ESRI Shapefile",
 				append = TRUE)
+st_write(ORNMajor_Focal, 
+				file.path(outDir,"ORNMajor_FocalArea.shp"), 
+				driver="ESRI Shapefile",
+				append = TRUE)
+st_write(ORNMinor_Focal, 
+				file.path(outDir,"ORNMinor_FocalArea.shp"), 
+				driver="ESRI Shapefile",
+				append = TRUE)								
 st_write(OHN_Focal, 
 				file.path(outDir, "OHN_FocalArea.shp"), 
 				driver="ESRI Shapefile",
@@ -388,6 +439,14 @@ writeRaster(ORN_rcl,
 				file.path(outDir, 
 				paste0("ORN_reclass_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
+writeRaster(ORN_rclMajor, 
+				file.path(outDir, 
+				paste0("ORNMajor_reclass_", polygonBufferWidth, "km.tif")),
+				overwrite = TRUE)
+writeRaster(ORN_rclMinor, 
+				file.path(outDir, 
+				paste0("ORNMinor_reclass_", polygonBufferWidth, "km.tif")),
+				overwrite = TRUE)				
 writeRaster(OHN_rcl, 
 				file.path(outDir, 
 				paste0("OHN_reclass_", polygonBufferWidth, "km.tif")),
@@ -404,6 +463,16 @@ st_write(ORN,
 				paste0("ORN_", polygonBufferWidth, "km.shp")), 
 				driver="ESRI Shapefile",
 				append = TRUE)
+st_write(ORNMajor, 
+				file.path(outDir, 
+				paste0("ORNMajor_", polygonBufferWidth, "km.shp")), 
+				driver="ESRI Shapefile",
+				append = TRUE)
+st_write(ORNMinor, 
+				file.path(outDir, 
+				paste0("ORNMinor_", polygonBufferWidth, "km.shp")), 
+				driver="ESRI Shapefile",
+				append = TRUE)								
 st_write(OHN, 
 				file.path(outDir, 
 				paste0("OHN_", polygonBufferWidth, "km.shp")), 
@@ -444,6 +513,12 @@ writeRaster(urban_rcl_buffer,
 				file.path(outDir, 
 				paste0("Urban_reclass_", polygonBufferWidth, "km_buffered.tif")),
 				overwrite = TRUE)
+writeRaster(ORN_rclMajor, 
+				file.path(outDir, "ORNMajor_reclass_FocalArea.tif"),
+				overwrite = TRUE)	
+writeRaster(ORN_rclMinor, 
+				file.path(outDir, "ORNMinor_reclass_FocalArea.tif"),
+				overwrite = TRUE)								
   # ESRI shapefile
 st_write(ORN_buffer, 
 				file.path(outDir, 
