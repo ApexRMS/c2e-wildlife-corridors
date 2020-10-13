@@ -53,7 +53,7 @@ focalArea <- st_read(
 crosswalk <- read_csv(
 				file.path(
 				paste0(dataDir, "/Resistance"), 
-                "GenericSpeciesResistanceCrosswalk.csv"))
+                "GenericResistanceCrosswalk.csv"))
 
 ## Create resistance layer  ---------------------------------------------------------
   # Reclassify
