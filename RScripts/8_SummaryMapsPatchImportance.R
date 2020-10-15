@@ -33,7 +33,6 @@ rescaleR <- function(x, new.min = 0, new.max = 1) {
    new.min + (x - x.min) * ((new.max - new.min) / (x.max - x.min))
 }
 
-
   # Input parameters
 source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters
 	specieslist
@@ -80,53 +79,61 @@ ODVI_PCconnect <- raster(file.path(outDir,
   # Restrict habitat suitability to 60% only & Scale
 BLBR_HSred <- BLBR_HS %>%
 			 calc(., fun=function(x){
-			 	ifelse(x>= suitabilityThreshold, x, NA)})  %>%
-			 scale(., center=TRUE, scale=TRUE)	
+			 	ifelse(x >= suitabilityThreshold, x, NA)})  %>%
+			 scale(., center=TRUE, scale=TRUE)	%>%
+			 calc(., fun = rescaleR)
 			 
 EMBL_HSred <- EMBL_HS  %>%
 			 calc(., fun=function(x){
 			 	ifelse(x>= suitabilityThreshold, x, NA)})  %>%
-			 scale(., center=TRUE, scale=TRUE)	
+			 scale(., center=TRUE, scale=TRUE)%>%
+			 calc(., fun = rescaleR)	
 			  
 ODVI_HSred <- ODVI_HS %>% 
 			 calc(., fun=function(x){
 			 	ifelse(x>= suitabilityThreshold, x, NA)})  %>%
-			 scale(., center=TRUE, scale=TRUE)	
+			 scale(., center=TRUE, scale=TRUE)	%>%
+			 calc(., fun = rescaleR)
 
 ## Crop, scale and log density
 densityCrop <- density %>%
-				crop(., BLBR_HS) %>%
-				mask(., BLBR_HS) %>%  
+				crop(., focalArea) %>%
+				mask(., focalArea) %>%  
 				calc(., fun=function(x){log(x)}) %>% #log values for normality
-				scale(., center=TRUE, scale=TRUE)	
+				scale(., center=TRUE, scale=TRUE) %>%
+			 	calc(., fun = rescaleR)	
 
 ##Crop, scale and log patch importance values
 BLBR_PCfluxExt <-  BLBR_PCflux %>%
-					extend(., extent(BLBR_HS), value=NA) %>%
-					calc(., fun=function(x){log(x)}) %>%
-					scale(., center=TRUE, scale=TRUE) 
+					extend(., extent(focalArea), value=NA) %>%
+					scale(., center=TRUE, scale=TRUE) %>%
+			 	calc(., fun = rescaleR)
 					
 EMBL_PCfluxExt <-  EMBL_PCflux %>%
-					extend(., extent(BLBR_HS), value=NA) %>%
-					calc(., fun=function(x){log(x)}) %>%
-					scale(., center=TRUE, scale=TRUE)
+					extend(., extent(focalArea), value=NA) %>%
+					scale(., center=TRUE, scale=TRUE) %>%
+			 		calc(., fun = rescaleR)
 					
 ODVI_PCfluxExt <-  ODVI_PCflux %>%
-					extend(., extent(BLBR_HS), value=NA) %>%
-					calc(., fun=function(x){log(x)}) %>%
-					scale(., center=TRUE, scale=TRUE)
+					extend(., extent(focalArea), value=NA) %>%
+					scale(., center=TRUE, scale=TRUE)%>%
+			 		calc(., fun = rescaleR)
 					
+  #					
 BLBR_PCconnectExt <-  BLBR_PCconnect %>%
-						extend(., extent(BLBR_HS), value=NA) %>%
-						scale(., center=TRUE, scale=TRUE)
+						extend(., extent(focalArea), value=NA) %>%
+						scale(., center=TRUE, scale=TRUE) %>%
+			 			calc(., fun = rescaleR)
 					
 EMBL_PCconnectExt  <-  EMBL_PCconnect %>%
-						extend(., extent(BLBR_HS), value=NA) %>%
-						scale(., center=TRUE, scale=TRUE)
+						extend(., extent(focalArea), value=NA) %>%
+						scale(., center=TRUE, scale=TRUE) %>%
+			 			calc(., fun = rescaleR)
 					
 ODVI_PCconnectExt  <-  ODVI_PCconnect %>%
-						extend(., extent(BLBR_HS), value=NA) %>%
-						scale(., center=TRUE, scale=TRUE)
+						extend(., extent(focalArea), value=NA) %>%
+						scale(., center=TRUE, scale=TRUE) %>%
+			 			calc(., fun = rescaleR)
 	
 
 ## Combine normalized data layers and calculate the sum of all layers ----------------
@@ -144,19 +151,22 @@ ODVI_PCSumPercentile <- quantile(ODVI_PCRawSum)
   # Combine all species
 allSp <- stack(BLBR_PCfluxExt, BLBR_PCconnectExt, EMBL_PCfluxExt, EMBL_PCconnectExt, ODVI_PCfluxExt, ODVI_PCconnectExt, BLBR_HSred, EMBL_HSred, ODVI_HSred, densityCrop)
 
-allSp_PCRawSum <- sum(allSp, na.rm=FALSE)
+allSp_PCRawSum <- sum(allSp, na.rm=TRUE)
 
+allSp_SumCrop <- allSp_PCRawSum %>%
+				crop(., focalArea) %>%
+				mask(., focalArea)
 
-allSp_PCSumPercentile <- quantile(allSp_PCRawSumCrop, na.rm=TRUE)  
-#         0%         25%         50%         75%        100% 
-#-15.8292599   0.9311318   2.6332462   3.5641773   6.3926849 
+  # Range scale 
+allSp_range <- calc(allSp_SumCrop, fun = function(x){x/10})
 
-  #Range scale 
-allSp_range <- calc(allSp_PCRawSum, fun = rescaleR)
+allSp_PCSumPercentile <- quantile(allSp_SumCrop, na.rm=TRUE)  
+	#         0%         25%         50%         75%        100% 
+	#-13.2262386  -1.5639480  -0.7587061   1.6640679   6.8402504 
 
 ## Save final allSp and allSpRange raster layer-------------------------------------
 
-writeRaster(allSp_PCRawSum, 
+writeRaster(allSp_SumCrop, 
 			file.path(outDir, "allSp_SyntheticRaw.tif"), 
 			overwrite=TRUE)
 writeRaster(allSp_range, 
