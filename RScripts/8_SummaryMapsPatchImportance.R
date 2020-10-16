@@ -15,7 +15,6 @@
 ## Workspace ---------------------------------------------------------
 
   # Packages
-#library(Makurhini)
 library(tidyverse)
 library(raster)
 library(sf)
@@ -77,28 +76,42 @@ ODVI_PCconnect <- raster(file.path(outDir,
 ## Process raster layers -----------------------------------------
 
   # Restrict habitat suitability to 60% only & Scale
+#
 BLBR_HSred <- BLBR_HS %>%
 			 calc(., fun=function(x){
-			 	ifelse(x >= suitabilityThreshold, x, NA)})  %>%
+			 	ifelse(x >= suitabilityThreshold, x, NA)})
+BLBR_HSbin <- calc(BLBR_HSred, fun=function(x){ifelse(x > 0, 1, x)})
+
+BLBR_HSsc <- BLBR_HSred  %>%
 			 scale(., center=TRUE, scale=TRUE)	%>%
 			 calc(., fun = rescaleR)
-			 
+#			 
 EMBL_HSred <- EMBL_HS  %>%
 			 calc(., fun=function(x){
-			 	ifelse(x>= suitabilityThreshold, x, NA)})  %>%
-			 scale(., center=TRUE, scale=TRUE)%>%
+			 	ifelse(x>= suitabilityThreshold, x, NA)}) 
+EMBL_HSbin <- calc(EMBL_HSred, fun=function(x){ifelse(x > 0, 1, x)})
+
+EMBL_HSsc <- EMBL_HSred  %>%
+			 scale(., center=TRUE, scale=TRUE) %>%
 			 calc(., fun = rescaleR)	
-			  
+#			  
 ODVI_HSred <- ODVI_HS %>% 
 			 calc(., fun=function(x){
-			 	ifelse(x>= suitabilityThreshold, x, NA)})  %>%
+			 	ifelse(x>= suitabilityThreshold, x, NA)}) 
+ODVI_HSbin <- calc(ODVI_HSred, fun=function(x){ifelse(x > 0, 1, x)})
+
+ODVI_HSsc <- ODVI_HSred  %>%
 			 scale(., center=TRUE, scale=TRUE)	%>%
 			 calc(., fun = rescaleR)
+
+## Make combined habitat suitability layer
+combinedHS <- sum(stack(BLBR_HSbin, EMBL_HSbin, ODVI_HSbin), na.rm=TRUE)
+combinedHS <- calc(combinedHS, fun=function(x){ifelse(x==0, NA, 1)})
 
 ## Crop, scale and log density
 densityCrop <- density %>%
 				crop(., focalArea) %>%
-				mask(., focalArea) %>%  
+				mask(., combinedHS) %>%  
 				calc(., fun=function(x){log(x)}) %>% #log values for normality
 				scale(., center=TRUE, scale=TRUE) %>%
 			 	calc(., fun = rescaleR)	
@@ -107,7 +120,7 @@ densityCrop <- density %>%
 BLBR_PCfluxExt <-  BLBR_PCflux %>%
 					extend(., extent(focalArea), value=NA) %>%
 					scale(., center=TRUE, scale=TRUE) %>%
-			 	calc(., fun = rescaleR)
+			 		calc(., fun = rescaleR)
 					
 EMBL_PCfluxExt <-  EMBL_PCflux %>%
 					extend(., extent(focalArea), value=NA) %>%
@@ -135,41 +148,59 @@ ODVI_PCconnectExt  <-  ODVI_PCconnect %>%
 						scale(., center=TRUE, scale=TRUE) %>%
 			 			calc(., fun = rescaleR)
 	
+	# Ignore warnings
 
 ## Combine normalized data layers and calculate the sum of all layers ----------------
 
-  # Per species
-BLBR_PCRawSum <- (BLBR_PCintraExt + BLBR_PCconnectExt)
-BLBR_PCSumPercentile <- quantile(BLBR_PCRawSum)
-
-EMBL_PCRawSum <- (EMBL_PCintraExt + EMBL_PCconnectExt)
-EMBL_PCSumPercentile <- quantile(EMBL_PCRawSum)
-
-ODVI_PCRawSum <- (ODVI_PCintraExt + ODVI_PCconnectExt)
-ODVI_PCSumPercentile <- quantile(ODVI_PCRawSum)
-
   # Combine all species
-allSp <- stack(BLBR_PCfluxExt, BLBR_PCconnectExt, EMBL_PCfluxExt, EMBL_PCconnectExt, ODVI_PCfluxExt, ODVI_PCconnectExt, BLBR_HSred, EMBL_HSred, ODVI_HSred, densityCrop)
+allSp <- stack(BLBR_PCfluxExt, BLBR_PCconnectExt, EMBL_PCfluxExt, EMBL_PCconnectExt, ODVI_PCfluxExt, ODVI_PCconnectExt, BLBR_HSsc, EMBL_HSsc, ODVI_HSsc, densityCrop)
+plot(allSp)
+  # Habitat suitability
+HSlayers <- stack(BLBR_HSsc, EMBL_HSsc, ODVI_HSsc)
+  # Patch importance layer 
+PIlayers <- stack(BLBR_PCfluxExt, BLBR_PCconnectExt, EMBL_PCfluxExt, EMBL_PCconnectExt, ODVI_PCfluxExt, ODVI_PCconnectExt)
 
+## Calculate sum layers for each
+
+  # All species 
 allSp_PCRawSum <- sum(allSp, na.rm=TRUE)
-
 allSp_SumCrop <- allSp_PCRawSum %>%
+				crop(., focalArea) %>%  
+				mask(., combinedHS)
+  # Range scale - 10 layers, each scaled from 0-1
+allSp_range <- calc((allSp_SumCrop/10), fun = rescaleR)
+plot(allSp_range)
+
+  #Habitat suitability
+HS_PCRawSum <- sum(HSlayers, na.rm=TRUE)
+HS_SumCrop <- HS_PCRawSum %>%
 				crop(., focalArea) %>%
-				mask(., focalArea)
+				mask(., combinedHS)
+  # Range scale - 10 layers, each scaled from 0-1
+HS_range <- calc((HS_SumCrop/3), fun = rescaleR)
+plot(HS_range)
 
-  # Range scale 
-allSp_range <- calc(allSp_SumCrop, fun = function(x){x/10})
+  #Patch importance
+PI_PCRawSum <- sum(PIlayers, na.rm=TRUE)
+PI_SumCrop <- PI_PCRawSum %>%
+				crop(., focalArea) %>%
+				mask(., combinedHS)
+  # Range scale - 10 layers, each scaled from 0-1
+PI_range <- calc((PI_SumCrop/6), fun = rescaleR)
+plot(PI_range)
 
-allSp_PCSumPercentile <- quantile(allSp_SumCrop, na.rm=TRUE)  
-	#         0%         25%         50%         75%        100% 
-	#-13.2262386  -1.5639480  -0.7587061   1.6640679   6.8402504 
 
 ## Save final allSp and allSpRange raster layer-------------------------------------
 
-writeRaster(allSp_SumCrop, 
-			file.path(outDir, "allSp_SyntheticRaw.tif"), 
-			overwrite=TRUE)
+#writeRaster(allSp_SumCrop, 
+#			file.path(outDir, "allSp_SyntheticRaw.tif"), 
+#			overwrite=TRUE)
 writeRaster(allSp_range, 
 			file.path(outDir, "allSp_SyntheticRange.tif"), 
 			overwrite=TRUE)			
-			
+writeRaster(HS_range, 
+			file.path(outDir, "HabitatSuitability_SyntheticRange.tif"), 
+			overwrite=TRUE)		
+writeRaster(PI_range, 
+			file.path(outDir, "PatchImportance_SyntheticRange.tif"), 
+			overwrite=TRUE)						
