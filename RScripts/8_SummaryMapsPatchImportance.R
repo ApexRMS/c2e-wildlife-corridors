@@ -27,8 +27,8 @@ outDir <- file.path(projectDir, "Results")
 
   # Functions
 rescaleR <- function(x, new.min = 0, new.max = 1) {
-   x.min = min(x, na.rm=TRUE)
-   x.max = max(x, na.rm=TRUE)
+   x.min = suppressWarnings(min(x, na.rm=TRUE))
+   x.max = suppressWarnings(max(x, na.rm=TRUE))
    new.min + (x - x.min) * ((new.max - new.min) / (x.max - x.min))
 }
 
@@ -75,132 +75,132 @@ ODVI_PCconnect <- raster(file.path(outDir,
 					  
 ## Process raster layers -----------------------------------------
 
-  # Restrict habitat suitability to 60% only & Scale
-#
+  # Restrict habitat suitability to 60% only 
+  # Data is already scaled from 0-100
+
 BLBR_HSred <- BLBR_HS %>%
 			 calc(., fun=function(x){
 			 	ifelse(x >= suitabilityThreshold, x, NA)})
+  # Make binary version
 BLBR_HSbin <- calc(BLBR_HSred, fun=function(x){ifelse(x > 0, 1, x)})
-
-BLBR_HSsc <- BLBR_HSred  %>%
-			 scale(., center=TRUE, scale=TRUE)	%>%
-			 calc(., fun = rescaleR)
-#			 
+		 
 EMBL_HSred <- EMBL_HS  %>%
 			 calc(., fun=function(x){
 			 	ifelse(x>= suitabilityThreshold, x, NA)}) 
+  # Make binary version
 EMBL_HSbin <- calc(EMBL_HSred, fun=function(x){ifelse(x > 0, 1, x)})
 
-EMBL_HSsc <- EMBL_HSred  %>%
-			 scale(., center=TRUE, scale=TRUE) %>%
-			 calc(., fun = rescaleR)	
-#			  
 ODVI_HSred <- ODVI_HS %>% 
 			 calc(., fun=function(x){
 			 	ifelse(x>= suitabilityThreshold, x, NA)}) 
+  # Make binary version
 ODVI_HSbin <- calc(ODVI_HSred, fun=function(x){ifelse(x > 0, 1, x)})
 
-ODVI_HSsc <- ODVI_HSred  %>%
-			 scale(., center=TRUE, scale=TRUE)	%>%
-			 calc(., fun = rescaleR)
-
-## Make combined habitat suitability layer
+## Make combined habitat suitability layer 
 combinedHS <- sum(stack(BLBR_HSbin, EMBL_HSbin, ODVI_HSbin), na.rm=TRUE)
-combinedHS <- calc(combinedHS, fun=function(x){ifelse(x==0, NA, 1)})
+combinedBinaryHS <- calc(combinedHS, fun=function(x){ifelse(x==0, NA, 1)})
 
-## Crop, scale and log density
-densityCrop <- density %>%
+## Log, to improve normality
+densityLog <- density %>% 
 				crop(., focalArea) %>%
-				mask(., combinedHS) %>%  
-				calc(., fun=function(x){log(x)}) %>% #log values for normality
-				scale(., center=TRUE, scale=TRUE) %>%
-			 	calc(., fun = rescaleR)	
+				mask(., combinedBinaryHS) %>%
+				calc(., fun=function(x){log(x)}) #log values for normality
 
-##Crop, scale and log patch importance values
+## Crop and scale importance values. 
+  # Two different data types are combined, so normalize
 BLBR_PCfluxExt <-  BLBR_PCflux %>%
 					extend(., extent(focalArea), value=NA) %>%
-					scale(., center=TRUE, scale=TRUE) %>%
-			 		calc(., fun = rescaleR)
+					scale(., center=TRUE, scale=TRUE) 
 					
 EMBL_PCfluxExt <-  EMBL_PCflux %>%
 					extend(., extent(focalArea), value=NA) %>%
-					scale(., center=TRUE, scale=TRUE) %>%
-			 		calc(., fun = rescaleR)
+					scale(., center=TRUE, scale=TRUE) 
 					
 ODVI_PCfluxExt <-  ODVI_PCflux %>%
 					extend(., extent(focalArea), value=NA) %>%
-					scale(., center=TRUE, scale=TRUE)%>%
-			 		calc(., fun = rescaleR)
-					
-  #					
+					scale(., center=TRUE, scale=TRUE) 
+									
 BLBR_PCconnectExt <-  BLBR_PCconnect %>%
 						extend(., extent(focalArea), value=NA) %>%
-						scale(., center=TRUE, scale=TRUE) %>%
-			 			calc(., fun = rescaleR)
+						scale(., center=TRUE, scale=TRUE) 
 					
 EMBL_PCconnectExt  <-  EMBL_PCconnect %>%
 						extend(., extent(focalArea), value=NA) %>%
-						scale(., center=TRUE, scale=TRUE) %>%
-			 			calc(., fun = rescaleR)
+						scale(., center=TRUE, scale=TRUE) 
 					
 ODVI_PCconnectExt  <-  ODVI_PCconnect %>%
 						extend(., extent(focalArea), value=NA) %>%
-						scale(., center=TRUE, scale=TRUE) %>%
-			 			calc(., fun = rescaleR)
+						scale(., center=TRUE, scale=TRUE) 
 	
-	# Ignore warnings
+	
+## Calculate the sum of all layers --------------------------------------
 
-## Combine normalized data layers and calculate the sum of all layers ----------------
+  # Habitat suitability layer
+HSlayers <- stack(BLBR_HSred, EMBL_HSred, ODVI_HSred)
 
-  # Combine all species
-allSp <- stack(BLBR_PCfluxExt, BLBR_PCconnectExt, EMBL_PCfluxExt, EMBL_PCconnectExt, ODVI_PCfluxExt, ODVI_PCconnectExt, BLBR_HSsc, EMBL_HSsc, ODVI_HSsc, densityCrop)
-plot(allSp)
-  # Habitat suitability
-HSlayers <- stack(BLBR_HSsc, EMBL_HSsc, ODVI_HSsc)
+  # Divide by number of species to rescale back to 0-100
+HS_PCRawSum <- sum(HSlayers, na.rm=TRUE)/3  # Raw sum
+
+  # Process layer
+HS_SumCrop <- HS_PCRawSum %>%
+				crop(., focalArea) %>%
+				mask(., combinedBinaryHS)
+plot(HS_SumCrop)
+
   # Patch importance layer 
 PIlayers <- stack(BLBR_PCfluxExt, BLBR_PCconnectExt, EMBL_PCfluxExt, EMBL_PCconnectExt, ODVI_PCfluxExt, ODVI_PCconnectExt)
 
-## Calculate sum layers for each
-
-  # All species 
-allSp_PCRawSum <- sum(allSp, na.rm=TRUE)
-allSp_SumCrop <- allSp_PCRawSum %>%
-				crop(., focalArea) %>%  
-				mask(., combinedHS)
-  # Range scale - 10 layers, each scaled from 0-1
-allSp_range <- calc((allSp_SumCrop/10), fun = rescaleR)
-plot(allSp_range)
-
-  #Habitat suitability
-HS_PCRawSum <- sum(HSlayers, na.rm=TRUE)
-HS_SumCrop <- HS_PCRawSum %>%
-				crop(., focalArea) %>%
-				mask(., combinedHS)
-  # Range scale - 10 layers, each scaled from 0-1
-HS_range <- calc((HS_SumCrop/3), fun = rescaleR)
-plot(HS_range)
-
-  #Patch importance
+  # Process layer
 PI_PCRawSum <- sum(PIlayers, na.rm=TRUE)
 PI_SumCrop <- PI_PCRawSum %>%
 				crop(., focalArea) %>%
-				mask(., combinedHS)
-  # Range scale - 10 layers, each scaled from 0-1
-PI_range <- calc((PI_SumCrop/6), fun = rescaleR)
-plot(PI_range)
+				mask(., combinedBinaryHS) %>%
+				calc(., fun = rescaleR)
+plot(PI_SumCrop)
+
+  # Density layer
+densityRescale <- densityLog %>% calc(., fun = rescaleR)
+plot(densityRescale)
+
+## Calculate sum layers for all layers
+
+allSp <- stack((HS_SumCrop/100), calc(PI_SumCrop, rescaleR), densityRescale)
+
+allSpRawSum <- sum(allSp, na.rm=TRUE)
+plot(allSpRawSum)
+
+  # Range scale from 0-1
+allSp_range <- calc(allSpRawSum, fun = rescaleR)
 
 
-## Save final allSp and allSpRange raster layer-------------------------------------
+## Save output raster files -------------------------------------
 
-#writeRaster(allSp_SumCrop, 
-#			file.path(outDir, "allSp_SyntheticRaw.tif"), 
-#			overwrite=TRUE)
-writeRaster(allSp_range, 
-			file.path(outDir, "allSp_SyntheticRange.tif"), 
-			overwrite=TRUE)			
-writeRaster(HS_range, 
-			file.path(outDir, "HabitatSuitability_SyntheticRange.tif"), 
+  # Intermediate outputs
+BLBR_HSbin
+writeRaster(BLBR_HSbin, 
+			file.path(outDir, "BLBR_BinHabitatSuitability.tif"), 
 			overwrite=TRUE)		
-writeRaster(PI_range, 
-			file.path(outDir, "PatchImportance_SyntheticRange.tif"), 
-			overwrite=TRUE)						
+writeRaster(BLBR_HSbin, 
+			file.path(outDir, "EMBL_BinHabitatSuitability.tif"), 
+			overwrite=TRUE)		
+writeRaster(BLBR_HSbin, 
+			file.path(outDir, "ODVI_BinHabitatSuitability.tif"), 
+			overwrite=TRUE)		
+
+  # Outputs per input type
+writeRaster(HS_SumCrop, 
+			file.path(outDir, "All_HabitatSuitability_0100.tif"), 
+			overwrite=TRUE)		
+writeRaster(PI_SumCrop, 
+			file.path(outDir, "All_PatchImportance_01.tif"), 
+			overwrite=TRUE)		
+writeRaster(densityRescale, 
+			file.path(outDir, "All_Density_01.tif"), 
+			overwrite=TRUE)								
+
+  # Overall output layer
+writeRaster(allSp_range, 
+			file.path(outDir, "All_CombinedLayers_01.tif"), 
+			overwrite=TRUE)		
+
+## End script
