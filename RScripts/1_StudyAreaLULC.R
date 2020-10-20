@@ -405,9 +405,16 @@ LULC_vizFocal <- LULC_bufferViz %>%
   mask(., mask= polygonProjected) %>% # Clip to study area
   trim(.)
 
+## Calculate percentage of each class in LULC maps
+freqLULC_vizFocal <- as_tibble(freq(LULC_vizFocal)) %>%
+  filter(!is.na(value)) %>% mutate(percent = count/sum(count)*100) %>% 
+  arrange(desc(percent))
 
 
 ## Save outputs --------------------------
+  # Tabular
+write_csv(freqLULC_vizFocal, 
+          file.path(outDir, "LULC_Visualization_FocalArea_Freq.csv"))
 
   # Save intermediate outputs
 st_write(polygonProjected, 
