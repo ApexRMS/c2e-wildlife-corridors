@@ -65,6 +65,18 @@ minPatchSize <- read_csv(
 					paste0(dataDir, "/Focal Species"), 
 					"FocalSpeciesMinPatchSize.csv"))
 
+  # Parks
+currentParks <- st_read(
+				file.path(paste0(dataDir, "/Land use land cover/EcoParkLands"), 
+				"CurrentEcoParkLands.shp"))
+hendryMulti <- currentParks[which(currentParks$OBJECTID==24), ]
+hendryMulti$DestinationID <- 100
+hendry <- hendryMulti %>%
+			st_cast(., "POLYGON") %>%
+		    st_transform(., crs=st_crs(studyArea)) %>% # Transform to SOLRIS CRS
+  		    st_intersection(., studyArea) %>%
+			rasterize(., LULC_buffer, field = "DestinationID") %>% # Rasterize
+			calc(., fun=function(x){ifelse(x==100, 100, NA)})
 
 ## Create habitat suitability layer  ---------------------------------------------------------
 
@@ -74,9 +86,13 @@ for(i in specieslist){
 
 species <- i
 
-  # Reclassify
 suitabilityRaster <- LULC_buffer %>%
   					 reclassify(., rcl=crosswalkHabSuit[, c("LULC_ID", species)])
+
+if(species=="EMBL"){
+	suitabilityRaster <- max(suitabilityRaster, hendry, na.rm=TRUE)
+}
+
 
 ## Create habitat patch layer by species min patch size ---------------------------------
 
@@ -97,7 +113,7 @@ habitatRaster[Which(habitatClump %in% habitatClumpID$value)] <- 0
 habitatRasterCont <- clump(habitatRaster) 
 
 ## Create resistance layer ---------------------------------------------------------
-  
+
   # Reclassify
 resistanceRasterReclass <- LULC_buffer %>%
   							reclassify(., rcl=crosswalkResist[, c("LULC_ID", species)])

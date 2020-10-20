@@ -40,7 +40,6 @@ source(file.path(rawDataDir, "a233_InputParameters.R")) # project level paramete
 
 focalArea <- raster(file.path(procDataDir, "LULC_FocalArea.tif"))
 
-
   # Habitat suitability
 BLBR_HS <- raster(file.path(procDataDir, 
 					  paste0("BLBR", "_HabitatSuitability_FocalArea.tif")))
@@ -102,10 +101,11 @@ combinedBinaryHS <- calc(combinedHS, fun=function(x){ifelse(x==0, NA, 1)})
 
 ## Log, to improve normality
 densityLog <- density %>% 
+			   calc(., fun=function(x){log(x)}) #log values for normality
+densityCrop <- densityLog %>% 				
 				crop(., focalArea) %>%
-				mask(., combinedBinaryHS) %>%
-				calc(., fun=function(x){log(x)}) #log values for normality
-
+				mask(., focalArea)
+				
 ## Crop and scale importance values. 
   # Two different data types are combined, so normalize
 BLBR_PCfluxExt <-  BLBR_PCflux %>%
@@ -137,15 +137,19 @@ ODVI_PCconnectExt  <-  ODVI_PCconnect %>%
 
   # Habitat suitability layer
 HSlayers <- stack(BLBR_HSred, EMBL_HSred, ODVI_HSred)
-
-  # Divide by number of species to rescale back to 0-100
-HS_PCRawSum <- sum(HSlayers, na.rm=TRUE)/3  # Raw sum
-
-  # Process layer
+  # Calculate
+HS_PCRawSum <- sum(HSlayers, na.rm=TRUE)  # Raw sum
+HS_PCRawMax <- max(HSlayers, na.rm=TRUE)  # Raw sum
+  # Crop layer
 HS_SumCrop <- HS_PCRawSum %>%
 				crop(., focalArea) %>%
 				mask(., combinedBinaryHS)
+HS_MaxCrop <- HS_PCRawMax %>%
+				crop(., focalArea) %>%
+				mask(., combinedBinaryHS)				
+				
 plot(HS_SumCrop)
+plot(HS_MaxCrop)
 
   # Patch importance layer 
 PIlayers <- stack(BLBR_PCfluxExt, BLBR_PCconnectExt, EMBL_PCfluxExt, EMBL_PCconnectExt, ODVI_PCfluxExt, ODVI_PCconnectExt)
@@ -156,27 +160,35 @@ PI_SumCrop <- PI_PCRawSum %>%
 				crop(., focalArea) %>%
 				mask(., combinedBinaryHS) %>%
 				calc(., fun = rescaleR)
+
+PI_PCRawMax <- max(PIlayers, na.rm=TRUE)
+PI_MaxCrop <- PI_PCRawMax %>%
+				crop(., focalArea) %>%
+				mask(., combinedBinaryHS) %>%
+				calc(., fun = rescaleR)
+plot(PI_MaxCrop)
 plot(PI_SumCrop)
 
   # Density layer
-densityRescale <- densityLog %>% calc(., fun = rescaleR)
+densityRescale <- densityCrop %>% calc(., fun = rescaleR)
 plot(densityRescale)
 
 ## Calculate sum layers for all layers
 
-allSp <- stack((HS_SumCrop/100), calc(PI_SumCrop, rescaleR), densityRescale)
-
-allSpRawSum <- sum(allSp, na.rm=TRUE)
+allSp <- stack(calc(HS_SumCrop, rescaleR), PI_SumCrop, densityRescale)
+allSpRawSum <- sum(allSp, na.rm=TRUE) %>%
+				crop(., focalArea) %>%
+				mask(., combinedBinaryHS)
 plot(allSpRawSum)
-
   # Range scale from 0-1
 allSp_range <- calc(allSpRawSum, fun = rescaleR)
+plot(allSp_range)
 
 
 ## Save output raster files -------------------------------------
 
   # Intermediate outputs
-BLBR_HSbin
+
 writeRaster(BLBR_HSbin, 
 			file.path(outDir, "BLBR_BinHabitatSuitability.tif"), 
 			overwrite=TRUE)		
@@ -189,13 +201,19 @@ writeRaster(BLBR_HSbin,
 
   # Outputs per input type
 writeRaster(HS_SumCrop, 
-			file.path(outDir, "All_HabitatSuitability_0100.tif"), 
-			overwrite=TRUE)		
+			file.path(outDir, "All_HabitatSuitabilitySum_60-300.tif"), 
+			overwrite=TRUE)
+writeRaster(HS_MaxCrop, 
+			file.path(outDir, "All_HabitatSuitabilityMax_60-300.tif"), 
+			overwrite=TRUE)						
 writeRaster(PI_SumCrop, 
-			file.path(outDir, "All_PatchImportance_01.tif"), 
+			file.path(outDir, "All_PatchImportanceSum_0-1.tif"), 
 			overwrite=TRUE)		
+writeRaster(PI_MaxCrop, 
+			file.path(outDir, "All_PatchImportanceMax_0-1.tif"), 
+			overwrite=TRUE)					
 writeRaster(densityRescale, 
-			file.path(outDir, "All_Density_01.tif"), 
+			file.path(outDir, "All_Density_0-1.tif"), 
 			overwrite=TRUE)								
 
   # Overall output layer

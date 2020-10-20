@@ -18,7 +18,7 @@
 #	 - OR values                                                     
 #    - Bridge and Culvert Resistance layer                       
 #                                                                   
-# Script created by B Rayfield, C Debeyser, C Tucker for ApexRMS	
+# Script created by , C Tucker, B Rayfield, C Debeyser for ApexRMS	
 #####################################################################
 
 ## Workspace ---------------------------------------------------------
@@ -62,20 +62,16 @@ genericResistanceBuffer <- raster(
 
   # Study area - the polygon that encompases the Cootes to Escarpment EcoPark System
   # Projected file is our desired projection (see 1_StudyAreaLULCL)
-focalAreaPolygon <- st_read(
-							file.path(outDir, "FocalArea.shp")) # Study area polygon
-studyAreaPolygon <- st_read(
-							file.path(outDir, "StudyArea_20km.shp")) # Study area polygon
+focalAreaPolygon <- st_read(file.path(outDir, "FocalArea.shp")) # Study area polygon
+studyAreaPolygon <- st_read(file.path(outDir, "StudyArea_20km.shp")) # Study area polygon
 
   # Culverts
-culvertPoints <- st_read(
-						file.path(
+culvertPoints <- st_read(file.path(
 						paste0(dataDir, "/Land use land cover/C2E_Culverts"),
 						"C2E_Culverts.shp"))
   
   # Bridges
-bridgePoints <- st_read(
-						file.path(
+bridgePoints <- st_read(file.path(
 						paste0(dataDir, "/Land use land cover/C2E_Bridges/"),
                         "C2E_Bridges.shp"))
   
@@ -88,12 +84,12 @@ bridgePoints$LENGTH <-  bridgePoints$DESCRIPTIO %>%
   						as.numeric(.)
 
   # Reproject culvert and bridge geo data to same crs as studyAreaPolygon
-culvertProjected <- st_transform(culvertPoints, crs(focalAreaPolygon))
-bridgeProjected <- st_transform(bridgePoints, crs(focalAreaPolygon))
+culvertProjected <- st_transform(culvertPoints, st_crs(focalAreaPolygon))
+bridgeProjected <- st_transform(bridgePoints, st_crs(focalAreaPolygon)) 
 
   # Filter bridge/culvert points to those in focal area only
-culvertFocalArea <-   suppressWarnings(st_intersection(culvertProjected, focalAreaPolygon)) # Clip to focal study area
-bridgeFocalArea <-   suppressWarnings(st_intersection(bridgeProjected, focalAreaPolygon)) # Clip to focal study area
+culvertFocalArea <- st_intersection(culvertProjected, focalAreaPolygon) # Clip to focal study area
+bridgeFocalArea <- st_intersection(bridgeProjected, focalAreaPolygon) # Clip to focal study area
 
 ## Calculate resistance values for culverts -------------------------------------------------------
   
@@ -139,6 +135,7 @@ bridgeCross <- bridgeFocalAreaRed %>%
 					as.data.frame() %>%
 					dplyr::select(TRF_ID, STREET, Resistance) %>%
 					filter_all(all_vars(!is.infinite(.)))
+
 
 ## Convert to resistance raster files ------------------------------------------------------
 
@@ -208,13 +205,16 @@ write.csv(bridgeCross,
   # Polygons
 st_write(bridgeFocalAreaRed, 
 			file.path(outDir, "allBridgesFocal.shp"), 
-			driver="ESRI Shapefile")
+			driver="ESRI Shapefile",
+			append=FALSE)
 st_write(culvertFocalArea, 
 			file.path(outDir, "allCulvertsFocal.shp"), 
-			driver="ESRI Shapefile")  
+			driver="ESRI Shapefile",
+			append=FALSE)  
 st_write(culvertFocalAreaRed, 
 			file.path(outDir, "suitableCulvertsFocal.shp"), 
-			driver="ESRI Shapefile")
+			driver="ESRI Shapefile",
+			append=FALSE)
 
   # Rasters of resistance (Study Area buffered) 
 writeRaster(culvertRaster, 
@@ -254,3 +254,4 @@ writeRaster(combinedRasterFocal,
 writeRaster(combinedRaster, 
 			file.path(outDir, "Generic_ResistanceCulvertBridge_20km_buffer.asc"), 
 			overwrite=T)
+#End script

@@ -25,8 +25,8 @@ library(sf)
 options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=10)
 
   # Directories
-projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233" #BR
-#projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment/" #CT
+#projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233" #BR
+projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment/" #CT
 dataDir <- paste0(projectDir, "/Data/Raw")
 outDir <- paste0(projectDir, "/Data/Processed")
 

@@ -13,7 +13,7 @@
 # 		- clip all LULC layers to buffered study area and reclassify                                       
 # 	3. Combine all LULC rasters                                                                        
 # 	4. Clip all intermediate and final rasters to study area for visualizations                        #                                                                                                  
-# Script created by Bronwyn Rayfield and Chloé Debeyser for ApexRMS                                  
+# Script created by Bronwyn Rayfield, Chloé Debeyser, Caroline Tucker for ApexRMS                                  
 #####################################################################################################
 
 
@@ -24,9 +24,11 @@ library(tidyverse)
 library(sf)
 library(raster)
 
+
   # Directories
 #projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
 projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment" #CT
+#projectDir <- "c:/Users/carol/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment"
 dataDir <- file.path(projectDir, "Data/Raw")
 outDir <- file.path(projectDir, "Data/Processed")
 
@@ -61,6 +63,21 @@ urbanRaw <- st_read(
 				file.path(
 				paste0(dataDir, "/Land use land cover/Built-Up_Area-shp"), 
 				"Built-Up_Area.shp"))
+
+railRaw <- st_read(
+				file.path(
+				paste0(dataDir, "/Land use land cover/ORWNTRK/LIO-2019-09-30"), 
+				"ORWN_TRACK.shp"))
+
+## Additional files
+currentParks <- st_read(
+				file.path(paste0(dataDir, "/Land use land cover/EcoParkLands"), 
+				"CurrentEcoParkLands.shp"))
+ 
+  # Hopkins tract + Berry's tract
+berryII <- currentParks[which(currentParks$Name_1=="Berry Tract II"),]
+hopkinsMulti <- currentParks[which(currentParks$Name_1=="Hopkins Track"),]
+hopkins <- st_cast(hopkinsMulti, "POLYGON")
   
   # Resistance crosswalk
 crosswalk <- read_csv(
@@ -129,6 +146,7 @@ ORN_bufferMajor <- ORN_buffer[ORN_buffer$ROAD_CLASS %in% c("Arterial", "Collecto
 
 ORN_bufferMinor <- ORN_buffer[ORN_buffer$ROAD_CLASS %in% c("Local / Strata", "Local / Street", "Service", "Alleyway / Laneway", "<NA>", "Local / Unknown"),]
 
+  		
   # Reclassify
 ORN_rcl_buffer <- ORN_buffer %>%
   		left_join(., crosswalk[which(crosswalk$Source_Name == "ORN"), c("Destination_ID", "Source_Label")], by=c("ROAD_CLASS" = "Source_Label")) %>% # Add Destination_ID
@@ -141,6 +159,16 @@ ORN_rcl_bufferMajor <- ORN_bufferMajor %>%
 ORN_rcl_bufferMinor <- ORN_bufferMinor %>%
   		left_join(., crosswalk[which(crosswalk$Source_Name == "ORN"), c("Destination_ID", "Source_Label")], by=c("ROAD_CLASS" = "Source_Label")) %>% # Add Destination_ID
   		rasterize(., SOLRIS_buffer, field="Destination_ID") # Rasterize
+
+  # Railway
+   # Crop to buffered study area
+rail_buffer <- railRaw %>%
+  		st_transform(., crs=st_crs(SOLRIS_buffer)) %>% # Transform to SOLRIS CRS
+  		st_intersection(., studyAreaBuffer) # Clip to buffered study area
+rail_buffer$TYPE <- "Railway"
+rail_rcl_buffer <- rail_buffer %>%
+  		left_join(., crosswalk[which(crosswalk$Source_Name == "ORWNTRK"), c("Destination_ID", "Source_Label")], by=c("TYPE" = "Source_Label")) %>% # Add Destination_ID
+  		rasterize(., SOLRIS_buffer, field="Destination_ID") # Rasterize  		
 
   # OHN
    # Crop to buffered study area
@@ -158,25 +186,39 @@ OHN_rcl_buffer <- OHN_buffer %>%
   # Urban Areas
 urban_buffer <- urbanRaw %>%
   		st_transform(., crs=st_crs(SOLRIS_buffer)) %>% # Transform to SOLRIS CRS
-  		st_intersection(., studyAreaBuffer)
+      st_buffer(., dist = 0) %>%
+      st_intersection(., studyAreaBuffer)
 
   # Reclassify
 urban_rcl_buffer <- urban_buffer %>%
   		left_join(., crosswalk[which(crosswalk$Source_Name == "Built-up Areas"), c("Destination_ID", "Source_Label")], by=c("COMMUNIT_1" = "Source_Label")) %>% # Add Destination_ID
   		rasterize(., SOLRIS_buffer, field="Destination_ID") # Rasterize
 
+berry_buffer <- berryII %>%
+		st_transform(., crs=st_crs(SOLRIS_buffer)) %>% # Transform to SOLRIS CRS
+  		st_intersection(., studyAreaBuffer)
+berry_buffer$DestinationID <- 194  #Pasture and Abandoned fields		
+berry_rcl_buffer <- rasterize(berry_buffer, SOLRIS_buffer, field = "DestinationID") # Rasterize
+
+hopkins_buffer <- hopkins %>%
+		st_transform(., crs=st_crs(SOLRIS_buffer)) %>% # Transform to SOLRIS CRS
+  		st_intersection(., studyAreaBuffer)
+hopkins_buffer$DestinationID <- 194  #Pasture and Abandoned fields		
+hopkins_rcl_buffer <- rasterize(hopkins_buffer, SOLRIS_buffer, field = "DestinationID") # Rasterize
+
+
 ## LULC - Combine rasters ---------------------------
 
+#load(file="LULCtemp_line187.RData")
   # Remove undifferentiated cells from SOLRIS so that they can take the value from OLCDB
 SOLRIS_rcl_buffer[SOLRIS_rcl_buffer == 250] <- NA
 
   # Merge rasters: urban gets priority, followed by ORN (Major roads), ORN (Minor roads), OHN, SOLRIS, and last OLCDB
-LULC_buffer <- merge(urban_rcl_buffer, ORN_rcl_bufferMajor, ORN_rcl_bufferMinor, OHN_rcl_buffer, SOLRIS_rcl_buffer, OLCDB_rcl_buffer)
+#LULC_buffer <- merge(urban_rcl_buffer, rail_rcl_buffer, ORN_rcl_bufferMajor,  ORN_rcl_bufferMinor, OHN_rcl_buffer, SOLRIS_rcl_buffer, OLCDB_rcl_buffer)
+LULC_buffer <- merge(urban_rcl_buffer, rail_rcl_buffer, ORN_rcl_bufferMajor,  ORN_rcl_bufferMinor, OHN_rcl_buffer, berry_rcl_buffer, hopkins_rcl_buffer, SOLRIS_rcl_buffer, OLCDB_rcl_buffer)
 
-## LULC - Order for visualization---------------------------
-  
-  #
-  LULC_bufferViz <- merge(ORN_rcl_bufferMajor, ORN_rcl_bufferMinor, OHN_rcl_buffer, SOLRIS_rcl_buffer, OLCDB_rcl_buffer)
+## LULC - Order for visualization
+LULC_bufferViz <- merge(rail_rcl_buffer, ORN_rcl_bufferMajor, ORN_rcl_bufferMinor, OHN_rcl_buffer, berry_rcl_buffer, hopkins_rcl_buffer, SOLRIS_rcl_buffer, OLCDB_rcl_buffer)
 
 ## Crop data to STUDY AREA ------------------------------
 
@@ -252,6 +294,14 @@ urban_rcl <- urban_rcl_buffer %>%
   mask(., mask=studyArea) %>% # Clip to study area
   trim(.) # Trim extra white spaces
 
+  # Rail
+rail <- rail_buffer %>%
+  st_intersection(., studyArea) # Clip to study area
+
+rail_rcl <- rail_rcl_buffer %>%
+  crop(., extent(studyArea), snap="out") %>% # Crop SOLRIS to study area extent
+  mask(., mask=studyArea) %>% # Clip to study area
+  trim(.) # Trim extra white spaces
 
   # LULC
 LULC <- LULC_buffer %>%
@@ -335,6 +385,15 @@ urban_rcl_Focal <- urban_rcl_buffer %>%
   mask(., mask= polygonProjected) %>% # Clip to study area
   trim(.) # Trim extra white spaces
 
+  # Rail
+rail_Focal <- rail_buffer %>%
+  st_intersection(., polygonProjected) # Clip to study area
+
+rail_rcl_Focal <- rail_rcl_buffer %>%
+  crop(., extent(polygonProjected), snap="out") %>% # Crop SOLRIS to study area extent
+  mask(., mask= polygonProjected) %>% # Clip to study area
+  trim(.) # Trim extra white spaces
+  
   # LULC
 LULC_Focal <- LULC_buffer %>%
   crop(., extent(polygonProjected), snap="out") %>% # Crop to study area extent
@@ -394,6 +453,10 @@ writeRaster(OHN_rcl_Focal,
 writeRaster(urban_rcl_Focal, 
 				file.path(outDir, "Urban_reclass_FocalArea.tif"),
 				overwrite = TRUE)
+writeRaster(rail_rcl_Focal, 
+				file.path(outDir, "Rail_reclass_FocalArea.tif"),
+				overwrite = TRUE)
+
 
   # ESRI shapefile				
 st_write(ORN_Focal, 
@@ -414,6 +477,10 @@ st_write(OHN_Focal,
 				append = TRUE)
 st_write(urban_Focal, 
 				file.path(outDir, "Urban_FocalArea.shp"), 
+				driver="ESRI Shapefile",
+				append = TRUE)
+st_write(rail_Focal, 
+				file.path(outDir, "Rail_FocalArea.shp"), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 
@@ -455,7 +522,10 @@ writeRaster(urban_rcl,
 				file.path(outDir, 
 				paste0("Urban_reclass_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
-
+writeRaster(rail_rcl, 
+				file.path(outDir, 
+				paste0("Rail_reclass_", polygonBufferWidth, "km.tif")),
+				overwrite = TRUE)
 
   # ESRI shapefile				
 st_write(ORN, 
@@ -481,6 +551,11 @@ st_write(OHN,
 st_write(urban, 
 				file.path(outDir, 
 				paste0("Urban_", polygonBufferWidth, "km.shp")), 
+				driver="ESRI Shapefile",
+				append = TRUE)
+st_write(rail, 
+				file.path(outDir, 
+				paste0("Rail_", polygonBufferWidth, "km.shp")), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 
@@ -513,12 +588,17 @@ writeRaster(urban_rcl_buffer,
 				file.path(outDir, 
 				paste0("Urban_reclass_", polygonBufferWidth, "km_buffered.tif")),
 				overwrite = TRUE)
+writeRaster(rail_rcl_buffer, 
+				file.path(outDir, 
+				paste0("Rail_reclass_", polygonBufferWidth, "km_buffered.tif")),
+				overwrite = TRUE)				
 writeRaster(ORN_rclMajor, 
 				file.path(outDir, "ORNMajor_reclass_FocalArea.tif"),
 				overwrite = TRUE)	
 writeRaster(ORN_rclMinor, 
 				file.path(outDir, "ORNMinor_reclass_FocalArea.tif"),
 				overwrite = TRUE)								
+
   # ESRI shapefile
 st_write(ORN_buffer, 
 				file.path(outDir, 
@@ -535,6 +615,11 @@ st_write(urban_buffer,
 				paste0("Urban_", polygonBufferWidth, "km_buffered.shp")), 
 				driver="ESRI Shapefile",
 				append = FALSE)
+st_write(rail_buffer, 
+				file.path(outDir, 
+				paste0("Rail_", polygonBufferWidth, "km_buffered.shp")), 
+				driver="ESRI Shapefile",
+				append = FALSE)				
 
   # Save final output
   # Focal area

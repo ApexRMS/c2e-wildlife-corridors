@@ -32,7 +32,7 @@ procDataDir <- file.path(projectDir, "Data/Processed")
 outDir <- file.path(projectDir, "Results")
 
   # Input parameters
-source(file.path(dataDir, "a233_InputParameters.R")) # project level parameters
+source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters
 	specieslist
 	polygonBufferWidth
 	suitabilityThreshold

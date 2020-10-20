@@ -35,7 +35,7 @@ procDataDir <- file.path(projectDir, "Data/Processed")
 outDir <- file.path(projectDir, "Results")
 
   # Input parameters
-source(file.path(dataDir, "a233_InputParameters.R")) # project level parameters
+source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters
 	polygonBufferWidth
 	suitabilityThreshold
 
@@ -98,8 +98,6 @@ PCfocal <- MK_dPCIIC(nodes = habitatPatchesFocal,
                 	 probability = 0.95, 
                 	 distance_thresholds = maxdist,
                 	 rasterparallel = T)
-
-
 
 ## Save rasters
   # Focal area 
