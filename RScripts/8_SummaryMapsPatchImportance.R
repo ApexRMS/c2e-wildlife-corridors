@@ -36,6 +36,10 @@ rescaleR <- function(x, new.min = 0, new.max = 1) {
 source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters
 	specieslist
 
+  # EcoParks data
+ecopark <- st_read(file.path(
+			paste0(rawDataDir, "/Land use land cover/EcoParkLands"), 			"CurrentEcoParkLands.shp")) 
+
 ## Load species patch importance files -----------------------------------------
 
 focalArea <- raster(file.path(procDataDir, "LULC_FocalArea.tif"))
@@ -71,7 +75,7 @@ EMBL_PCconnect <- raster(file.path(outDir,
 ODVI_PCconnect <- raster(file.path(outDir, 
 					  paste0("ODVI", "_PC_FocalArea.tif")),
 					  band = 5)
-					  
+				  
 ## Process raster layers -----------------------------------------
 
   # Restrict habitat suitability to 60% only 
@@ -151,6 +155,10 @@ HS_MaxCrop <- HS_PCRawMax %>%
 plot(HS_SumCrop)
 plot(HS_MaxCrop)
 
+HS_SumCropRange <- calc(HS_SumCrop, fun = rescaleR)
+HS_SumCropTruncRange <- calc(HS_SumCrop, fun = function(x){rescaleR(x, new.min=0.6, new.max=1)})
+HS_MaxCropTruncRange <- calc(HS_MaxCrop, fun = function(x){rescaleR(x, new.min=0.6, new.max=1)})
+
   # Patch importance layer 
 PIlayers <- stack(BLBR_PCfluxExt, BLBR_PCconnectExt, EMBL_PCfluxExt, EMBL_PCconnectExt, ODVI_PCfluxExt, ODVI_PCconnectExt)
 
@@ -175,14 +183,30 @@ plot(densityRescale)
 
 ## Calculate sum layers for all layers
 
-allSp <- stack(calc(HS_SumCrop, rescaleR), PI_SumCrop, densityRescale)
+allSp <- stack(HS_MaxCropTruncRange, PI_SumCrop, densityRescale)
+allSpAllMax <- stack(HS_MaxCropTruncRange, PI_MaxCrop, densityRescale)
+
 allSpRawSum <- sum(allSp, na.rm=TRUE) %>%
 				crop(., focalArea) %>%
 				mask(., combinedBinaryHS)
 plot(allSpRawSum)
+allSpRawMax <- sum(allSpAllMax, na.rm=TRUE) %>%
+				crop(., focalArea) %>%
+				mask(., combinedBinaryHS)
+plot(allSpRawMax)
+		
+				
   # Range scale from 0-1
 allSp_range <- calc(allSpRawSum, fun = rescaleR)
 plot(allSp_range)
+
+  # Overlay ecoparks layer
+# How much of suitable habitat for each species?
+
+# How much of all suitable habitat?
+
+# Line plot of % of sum layer vs eco parks
+
 
 
 ## Save output raster files -------------------------------------
@@ -205,7 +229,16 @@ writeRaster(HS_SumCrop,
 			overwrite=TRUE)
 writeRaster(HS_MaxCrop, 
 			file.path(outDir, "All_HabitatSuitabilityMax_60-300.tif"), 
+			overwrite=TRUE)
+writeRaster(HS_MaxCropTruncRange, 
+			file.path(outDir, "All_HabitatSuitabilityMax_06-1.tif"), 
 			overwrite=TRUE)						
+writeRaster(HS_SumCropRange, 
+			file.path(outDir, "All_HabitatSuitabilitySum_0-1.tif"), 
+			overwrite=TRUE)
+writeRaster(HS_SumCropTruncRange, 
+			file.path(outDir, "All_HabitatSuitabilitySum_06-1.tif"), 
+			overwrite=TRUE)												
 writeRaster(PI_SumCrop, 
 			file.path(outDir, "All_PatchImportanceSum_0-1.tif"), 
 			overwrite=TRUE)		
@@ -217,8 +250,14 @@ writeRaster(densityRescale,
 			overwrite=TRUE)								
 
   # Overall output layer
+writeRaster(allSpRawSum, 
+			file.path(outDir, "All_CombinedLayers_0-3.tif"), 
+			overwrite=TRUE)	
+writeRaster(allSpRawMax, 
+			file.path(outDir, "All_CombinedLayersMaxHS&PI_0-3.tif"), 
+			overwrite=TRUE)					
 writeRaster(allSp_range, 
-			file.path(outDir, "All_CombinedLayers_01.tif"), 
+			file.path(outDir, "All_CombinedLayers_0-1.tif"), 
 			overwrite=TRUE)		
 
 ## End script
