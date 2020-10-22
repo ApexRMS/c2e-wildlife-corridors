@@ -112,6 +112,10 @@ habitatRaster[Which(habitatClump %in% habitatClumpID$value)] <- 0
   # Create raster with ID's for all patches > min threshold & > suitability threshold
 habitatRasterCont <- clump(habitatRaster) 
 
+  # Binary raster, suitable habitat
+binaryHabitatRaster <- calc(habitatRaster, fun=function(x){ifelse(x > 0, 1, x)})
+
+  
 ## Create resistance layer ---------------------------------------------------------
 
   # Reclassify
@@ -138,6 +142,11 @@ habitatRasterFocal <- habitatRaster %>%
  						trim(.) # Trim extra white spaces
 
 habitatRasterContFocal <- habitatRasterCont %>%
+  							crop(., extent(focalArea), snap="out") %>% # Crop to focal area extent
+  							mask(., mask=focalArea) %>% # Clip to focal area
+  							trim(.) # Trim extra white spaces
+
+binaryHabitatRasterFocal <- binaryHabitatRaster %>%
   							crop(., extent(focalArea), snap="out") %>% # Crop to focal area extent
   							mask(., mask=focalArea) %>% # Clip to focal area
   							trim(.) # Trim extra white spaces
@@ -180,6 +189,10 @@ writeRaster(habitatRasterFocal,
 			file.path(outDir, 
 			paste0(species, "_HabitatPatch_FocalArea.tif")), 
 			overwrite=TRUE)
+writeRaster(binaryHabitatRasterFocal, 
+			file.path(outDir, 
+			paste0(species, "_HabitatSuitability_Binary_FocalArea.tif")), 
+			overwrite=TRUE)			
 writeRaster(habitatRasterContFocal, 
 			file.path(outDir, 
 			paste0(species, "_HabitatPatchID_FocalArea.tif")), 
@@ -197,7 +210,7 @@ writeRaster(suitabilityRasterStudyArea,
 writeRaster(habitatRasterStudyArea, 
 			file.path(outDir, 
 			paste0(species, "_HabitatPatch_", polygonBufferWidth, "km.tif")), 
-			overwrite=TRUE)
+			overwrite=TRUE)			
 writeRaster(habitatRasterContStudyArea, 
 			file.path(outDir, 
 			paste0(species, "_HabitatPatchID_",  polygonBufferWidth, "km.tif")), 
