@@ -20,10 +20,9 @@ library(raster)
 library(sf)
 
   # Directories
-projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment" #CT
-rawDataDir <- file.path(projectDir, "Data/Raw")
-procDataDir <- file.path(projectDir, "Data/Processed")
-outDir <- file.path(projectDir, "Results")
+rawDataDir <- "Data/Raw"
+procDataDir <- "Data/Processed"
+outDir <- "Results"
 
   # Functions
 rescaleR <- function(x, new.min = 0, new.max = 1) {

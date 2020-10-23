@@ -26,10 +26,9 @@ library(raster)
 library(sf)
 
   # Directories
-projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment" #CT
-rawDataDir <- file.path(projectDir, "Data/Raw")
-procDataDir <- file.path(projectDir, "Data/Processed")
-outDir <- file.path(projectDir, "Results")
+rawDataDir <- "Data/Raw"
+procDataDir <- "Data/Processed"
+outDir <- "Results"
 
   # Input parameters
 source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters

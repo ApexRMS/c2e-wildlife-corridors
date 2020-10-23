@@ -26,52 +26,49 @@ library(raster)
 
 
   # Directories
-#projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
-projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment" #CT
-#projectDir <- "c:/Users/carol/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment"
-dataDir <- file.path(projectDir, "Data/Raw")
-outDir <- file.path(projectDir, "Data/Processed")
+rawDataDir <- "Data/Raw"
+procDataDir <- "Data/Processed"
 
   # Input parameters
-source(file.path(dataDir, "a233_InputParameters.R"))  #load project level parameters
+source(file.path(rawDataDir, "a233_InputParameters.R"))  #load project level parameters
 	polygonBufferWidth
 	
 ## Load data
   # Study area
 studyAreaPoints <- read_csv(
 				file.path(
-				paste0(dataDir, "/Study Area"), 
+				paste0(rawDataDir, "/Study Area"), 
 				"Vertices 20200610 DAG.csv")) # Study area vertices
   # LULC data
 SOLRISRaw <- raster(
 				file.path(
-				paste0(dataDir,"/Land use land cover/SOLRIS_Version_3_0"), 
+				paste0(rawDataDir,"/Land use land cover/SOLRIS_Version_3_0"), 
 				"SOLRIS_Version_3_0_LAMBERT.tif"))
 OLCDBRaw <- raster(
 				file.path(
-				paste0(dataDir, "/Land use land cover/Provincial Land Cover 1996 - 28 Class Grid"), 
+				paste0(rawDataDir, "/Land use land cover/Provincial Land Cover 1996 - 28 Class Grid"), 
 				"plc1996_28.tif"))
 ORNRaw <- st_read(
 				file.path(
-				paste0(dataDir, "/Land use land cover/Ontario_Road_Network__ORN__Segment_With_Address-shp"), 
+				paste0(rawDataDir, "/Land use land cover/Ontario_Road_Network__ORN__Segment_With_Address-shp"), 
 				"Ontario_Road_Network__ORN__Segment_With_Address.shp"))
 OHNRaw <- st_read(
 				file.path(
-				paste0(dataDir, "/Land use land cover/Ontario_Hydro_Network__OHN__-_Waterbody-shp"),
+				paste0(rawDataDir, "/Land use land cover/Ontario_Hydro_Network__OHN__-_Waterbody-shp"),
 				"Ontario_Hydro_Network__OHN__-_Waterbody.shp"))
 urbanRaw <- st_read(
 				file.path(
-				paste0(dataDir, "/Land use land cover/Built-Up_Area-shp"), 
+				paste0(rawDataDir, "/Land use land cover/Built-Up_Area-shp"), 
 				"Built-Up_Area.shp"))
 
 railRaw <- st_read(
 				file.path(
-				paste0(dataDir, "/Land use land cover/ORWNTRK/LIO-2019-09-30"), 
+				paste0(rawDataDir, "/Land use land cover/ORWNTRK/LIO-2019-09-30"), 
 				"ORWN_TRACK.shp"))
 
 ## Additional files
 currentParks <- st_read(
-				file.path(paste0(dataDir, "/Land use land cover/EcoParkLands"), 
+				file.path(paste0(rawDataDir, "/Land use land cover/EcoParkLands"), 
 				"CurrentEcoParkLands.shp"))
  
   # Hopkins tract + Berry's tract
@@ -82,7 +79,7 @@ hopkins <- st_cast(hopkinsMulti, "POLYGON")
   # Resistance crosswalk
 crosswalk <- read_csv(
 				file.path(
-				paste0(dataDir, "/Resistance"), 
+				paste0(rawDataDir, "/Resistance"), 
 				"GenericResistanceCrosswalk.csv"))
 
 ## Generate focal study area -------------------------------------
@@ -418,219 +415,219 @@ freqLULC_vizFocal <- as_tibble(freq(LULC_vizFocal)) %>%
 ## Save outputs --------------------------
   # Tabular
 write_csv(freqLULC_viz, 
-          file.path(outDir, "LULC_Visualization_20km_Freq.csv"))
+          file.path(procDataDir, "LULC_Visualization_20km_Freq.csv"))
 
 write_csv(freqLULC_vizFocal, 
-          file.path(outDir, "LULC_Visualization_FocalArea_Freq.csv"))
+          file.path(procDataDir, "LULC_Visualization_FocalArea_Freq.csv"))
 
   # Save intermediate outputs
 st_write(polygonProjected, 
-				file.path(outDir, "FocalArea.shp"), 
+				file.path(procDataDir, "FocalArea.shp"), 
 				driver="ESRI Shapefile",
 				append = FALSE)
 st_write(studyArea, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("StudyArea_", polygonBufferWidth, "km.shp")), 
 				driver="ESRI Shapefile",
 				append = FALSE)
 st_write(studyAreaBuffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("StudyArea_", polygonBufferWidth, "km_buffered.shp")), 
 				driver="ESRI Shapefile",
 				append = FALSE)
 
   # Focal Area
 writeRaster(SOLRIS_Focal, 
-				file.path(outDir, "SOLRIS_FocalArea.tif"),
+				file.path(procDataDir, "SOLRIS_FocalArea.tif"),
 				overwrite = TRUE)
 writeRaster(SOLRIS_rcl_Focal, 
-				file.path(outDir,"SOLRIS_reclass_FocalArea.tif"),
+				file.path(procDataDir,"SOLRIS_reclass_FocalArea.tif"),
 				overwrite = TRUE)
 writeRaster(OLCDB_Focal, 
-				file.path(outDir, "OLCDB_FocalArea.tif"),
+				file.path(procDataDir, "OLCDB_FocalArea.tif"),
 				overwrite = TRUE)
 writeRaster(OLCDB_rcl_Focal, 
-				file.path(outDir, "OLCDB_reclass_FocalArea.tif"),
+				file.path(procDataDir, "OLCDB_reclass_FocalArea.tif"),
 				overwrite = TRUE)
 writeRaster(ORN_rcl_Focal, 
-				file.path(outDir, "ORN_reclass_FocalArea.tif"),
+				file.path(procDataDir, "ORN_reclass_FocalArea.tif"),
 				overwrite = TRUE)
 writeRaster(ORN_rclMajor, 
-				file.path(outDir, "ORNMajor_reclass_FocalArea.tif"),
+				file.path(procDataDir, "ORNMajor_reclass_FocalArea.tif"),
 				overwrite = TRUE)	
 writeRaster(ORN_rclMinor, 
-				file.path(outDir, "ORNMinor_reclass_FocalArea.tif"),
+				file.path(procDataDir, "ORNMinor_reclass_FocalArea.tif"),
 				overwrite = TRUE)								
 writeRaster(OHN_rcl_Focal, 
-				file.path(outDir, "OHN_reclass_FocalArea.tif"),
+				file.path(procDataDir, "OHN_reclass_FocalArea.tif"),
 				overwrite = TRUE)
 writeRaster(urban_rcl_Focal, 
-				file.path(outDir, "Urban_reclass_FocalArea.tif"),
+				file.path(procDataDir, "Urban_reclass_FocalArea.tif"),
 				overwrite = TRUE)
 writeRaster(rail_rcl_Focal, 
-				file.path(outDir, "Rail_reclass_FocalArea.tif"),
+				file.path(procDataDir, "Rail_reclass_FocalArea.tif"),
 				overwrite = TRUE)
 
 
   # ESRI shapefile				
 st_write(ORN_Focal, 
-				file.path(outDir,"ORN_FocalArea.shp"), 
+				file.path(procDataDir,"ORN_FocalArea.shp"), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 st_write(ORNMajor_Focal, 
-				file.path(outDir,"ORNMajor_FocalArea.shp"), 
+				file.path(procDataDir,"ORNMajor_FocalArea.shp"), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 st_write(ORNMinor_Focal, 
-				file.path(outDir,"ORNMinor_FocalArea.shp"), 
+				file.path(procDataDir,"ORNMinor_FocalArea.shp"), 
 				driver="ESRI Shapefile",
 				append = TRUE)								
 st_write(OHN_Focal, 
-				file.path(outDir, "OHN_FocalArea.shp"), 
+				file.path(procDataDir, "OHN_FocalArea.shp"), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 st_write(urban_Focal, 
-				file.path(outDir, "Urban_FocalArea.shp"), 
+				file.path(procDataDir, "Urban_FocalArea.shp"), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 st_write(rail_Focal, 
-				file.path(outDir, "Rail_FocalArea.shp"), 
+				file.path(procDataDir, "Rail_FocalArea.shp"), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 
 
   # Study Area
 writeRaster(SOLRIS, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("SOLRIS_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 writeRaster(SOLRIS_rcl, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("SOLRIS_reclass_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 writeRaster(OLCDB, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("OLCDB_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 writeRaster(OLCDB_rcl, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("OLCDB_reclass_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 writeRaster(ORN_rcl, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("ORN_reclass_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 writeRaster(ORN_rclMajor, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("ORNMajor_reclass_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 writeRaster(ORN_rclMinor, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("ORNMinor_reclass_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)				
 writeRaster(OHN_rcl, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("OHN_reclass_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 writeRaster(urban_rcl, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("Urban_reclass_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 writeRaster(rail_rcl, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("Rail_reclass_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 
   # ESRI shapefile				
 st_write(ORN, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("ORN_", polygonBufferWidth, "km.shp")), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 st_write(ORNMajor, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("ORNMajor_", polygonBufferWidth, "km.shp")), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 st_write(ORNMinor, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("ORNMinor_", polygonBufferWidth, "km.shp")), 
 				driver="ESRI Shapefile",
 				append = TRUE)								
 st_write(OHN, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("OHN_", polygonBufferWidth, "km.shp")), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 st_write(urban, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("Urban_", polygonBufferWidth, "km.shp")), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 st_write(rail, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("Rail_", polygonBufferWidth, "km.shp")), 
 				driver="ESRI Shapefile",
 				append = TRUE)
 
   # Study Area Buffer
 writeRaster(SOLRIS_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("SOLRIS_", polygonBufferWidth, "km_buffered.tif")),
 				overwrite = TRUE)
 writeRaster(SOLRIS_rcl_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("SOLRIS_reclass_", polygonBufferWidth, "km_buffered.tif")),
 				overwrite = TRUE)
 writeRaster(OLCDB_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("OLCDB_", polygonBufferWidth, "km_buffered.tif")),
 				overwrite = TRUE)
 writeRaster(OLCDB_rcl_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("OLCDB_reclass_", polygonBufferWidth, "km_buffered.tif")),
 				overwrite = TRUE)
 writeRaster(ORN_rcl_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("ORN_reclass_", polygonBufferWidth, "km_buffered.tif")),
 				overwrite = TRUE)
 writeRaster(OHN_rcl_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("OHN_reclass_", polygonBufferWidth, "km_buffered.tif")),
 				overwrite = TRUE)
 writeRaster(urban_rcl_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("Urban_reclass_", polygonBufferWidth, "km_buffered.tif")),
 				overwrite = TRUE)
 writeRaster(rail_rcl_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("Rail_reclass_", polygonBufferWidth, "km_buffered.tif")),
 				overwrite = TRUE)				
 writeRaster(ORN_rclMajor, 
-				file.path(outDir, "ORNMajor_reclass_FocalArea.tif"),
+				file.path(procDataDir, "ORNMajor_reclass_FocalArea.tif"),
 				overwrite = TRUE)	
 writeRaster(ORN_rclMinor, 
-				file.path(outDir, "ORNMinor_reclass_FocalArea.tif"),
+				file.path(procDataDir, "ORNMinor_reclass_FocalArea.tif"),
 				overwrite = TRUE)								
 
   # ESRI shapefile
 st_write(ORN_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("ORN_", polygonBufferWidth, "km_buffered.shp")), 
 				driver="ESRI Shapefile",
 				append = FALSE)
 st_write(OHN_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("OHN_", polygonBufferWidth, "km_buffered.shp")), 
 				driver="ESRI Shapefile",
 				append = FALSE)
 st_write(urban_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("Urban_", polygonBufferWidth, "km_buffered.shp")), 
 				driver="ESRI Shapefile",
 				append = FALSE)
 st_write(rail_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("Rail_", polygonBufferWidth, "km_buffered.shp")), 
 				driver="ESRI Shapefile",
 				append = FALSE)				
@@ -638,24 +635,24 @@ st_write(rail_buffer,
   # Save final output
   # Focal area
 writeRaster(LULC_Focal, 
-				file.path(outDir, "LULC_FocalArea.tif"),
+				file.path(procDataDir, "LULC_FocalArea.tif"),
 				overwrite = TRUE)
 writeRaster(LULC_vizFocal, 
-				file.path(outDir, "LULC_Visualization_FocalArea.tif"),
+				file.path(procDataDir, "LULC_Visualization_FocalArea.tif"),
 				overwrite = TRUE)
   # Study area 							
 writeRaster(LULC, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("LULC_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 writeRaster(LULC_viz, 
-				file.path(outDir,
+				file.path(procDataDir,
 				paste0("LULC_Visualization_", polygonBufferWidth, "km.tif")),
 				overwrite = TRUE)
 
   # Buffered area
 writeRaster(LULC_buffer, 
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("LULC_", polygonBufferWidth, "km_buffered.tif")), 
 				overwrite=TRUE)
 				

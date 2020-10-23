@@ -25,9 +25,8 @@ library(grainscape)
 options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=10)
 
 # Directories
-projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
-dataDir <- file.path(projectDir, "Data/Processed")
-outDir <- file.path(projectDir, "Data/Processed")
+dataDir <- "Data/Processed"
+outDir <- "Data/Processed"
 
 # Input parameters
 polygonBufferWidth <- 20 # In km

@@ -4,16 +4,16 @@ library(sf)
 library(raster)
 
 # Directories
-projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
-dataDir <- file.path(projectDir, "Data/Processed")
-resultsDir <- file.path(projectDir, "Results")
+rawDataDir <- "Data/Raw"
+procDataDir <- "Data/Processed"
+outDir <- "Results"
 
 analysisName <- "Generic_CulvertBridge_5pairwise"
 
 # Read in data
-studyArea <- st_read(file.path(dataDir, paste0("StudyArea_20km.shp")))
-focalArea <- st_read(file.path(dataDir, "FocalArea.shp"))
-currMap_buffer <- raster(file.path(resultsDir,paste0(analysisName, "_cum_curmap.asc")))
+studyArea <- st_read(file.path(procDataDir, paste0("StudyArea_20km.shp")))
+focalArea <- st_read(file.path(procDataDir, "FocalArea.shp"))
+currMap_buffer <- raster(file.path(outDir,paste0(analysisName, "_cum_curmap.asc")))
 
 crs(currMap_buffer) <- crs(studyArea)
 logcurrMap_buffer <- log(currMap_buffer)
@@ -42,11 +42,11 @@ logcurrMap_focalArea <- logcurrMap_buffer %>%
 
 # Save geotifs
 # Study Area buffer
-writeRaster(currMap_buffer, file.path(resultsDir, paste0(analysisName, "_cum_curmap_20km_buffer.tif")), overwrite=TRUE)
-writeRaster(logcurrMap_buffer, file.path(resultsDir, paste0(analysisName, "_cum_curmap_log_20km_buffer.tif")), overwrite=TRUE)
+writeRaster(currMap_buffer, file.path(outDir, paste0(analysisName, "_cum_curmap_20km_buffer.tif")), overwrite=TRUE)
+writeRaster(logcurrMap_buffer, file.path(outDir, paste0(analysisName, "_cum_curmap_log_20km_buffer.tif")), overwrite=TRUE)
 # Study Area
-writeRaster(currMap, file.path(resultsDir, paste0(analysisName, "_cum_curmap_20km.tif")), overwrite=TRUE)
-writeRaster(logcurrMap, file.path(resultsDir, paste0(analysisName, "_cum_curmap_log_20km.tif")), overwrite=TRUE)
+writeRaster(currMap, file.path(outDir, paste0(analysisName, "_cum_curmap_20km.tif")), overwrite=TRUE)
+writeRaster(logcurrMap, file.path(outDir, paste0(analysisName, "_cum_curmap_log_20km.tif")), overwrite=TRUE)
 # Focal Area
-writeRaster(currMap_focalArea, file.path(resultsDir, paste0(analysisName, "_cum_curmap_focalArea.tif")), overwrite=TRUE)
-writeRaster(logcurrMap_focalArea, file.path(resultsDir, paste0(analysisName, "_cum_curmap_log_focalArea.tif")), overwrite=TRUE)
+writeRaster(currMap_focalArea, file.path(outDir, paste0(analysisName, "_cum_curmap_focalArea.tif")), overwrite=TRUE)
+writeRaster(logcurrMap_focalArea, file.path(outDir, paste0(analysisName, "_cum_curmap_log_focalArea.tif")), overwrite=TRUE)

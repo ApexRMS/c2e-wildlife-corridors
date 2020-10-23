@@ -25,32 +25,32 @@ library(sf)
 options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=10)
 
   # Directories
-dataDir <- "Data/Raw"
-outDir <- "Data/Processed"
+rawDataDir <- "Data/Raw"
+procDataDir <- "Data/Processed"
 
   # Input parameters
-source(file.path(dataDir, "a233_InputParameters.R"))
+source(file.path(rawDataDir, "a233_InputParameters.R"))
 	polygonBufferWidth
 	roadbuffer
 
 ## Read in data
   # Combined LULC layers
 LULC <- raster(
-				file.path(outDir, 
+				file.path(procDataDir, 
             	paste0("LULC_", polygonBufferWidth, "km.tif")))
 LULC_buffer <- raster(
-				file.path(outDir, 
+				file.path(procDataDir, 
                 paste0("LULC_", polygonBufferWidth, "km_buffered.tif")))
                 
   #Focal area polygon
 focalArea <- st_read(
-				file.path(outDir, "FocalArea.shp")) # Study area polygon
+				file.path(procDataDir, "FocalArea.shp")) # Study area polygon
 
  # Tabular data
    # Resistance crosswalk
 crosswalk <- read_csv(
 				file.path(
-				paste0(dataDir, "/Resistance"), 
+				paste0(rawDataDir, "/Resistance"), 
                 "GenericResistanceCrosswalk.csv"))
 
 ## Create resistance layer  ---------------------------------------------------------
@@ -70,18 +70,18 @@ resistanceFocal <- resistance %>%
 # Save outputs ---------------------------------------------------------
 #geotif
 writeRaster(resistanceFocal, 
-			file.path(outDir, "Generic_Resistance_FocalArea.tif"), 
+			file.path(procDataDir, "Generic_Resistance_FocalArea.tif"), 
 			overwrite=TRUE)
 writeRaster(resistance, 
-			file.path(outDir, 
+			file.path(procDataDir, 
 			paste0("Generic_Resistance_", polygonBufferWidth, "km.tif")), overwrite=TRUE)
 writeRaster(resistance_buffer, 
-			file.path(outDir, 
+			file.path(procDataDir, 
 			paste0("Generic_Resistance_", polygonBufferWidth, "km_buffer.tif")), 
 			overwrite=TRUE)
 #asc
 writeRaster(resistance_buffer, 
-			file.path(outDir, 
+			file.path(procDataDir, 
 			paste0("Generic_Resistance_", polygonBufferWidth, "km_buffer.asc")), 
 			overwrite=TRUE)
 

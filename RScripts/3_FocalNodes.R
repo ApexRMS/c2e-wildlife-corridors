@@ -20,19 +20,18 @@ library(raster)
 options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=10)
 
   # Directories
-projectDir <- "C:/Users/bronw/Documents/Apex/Projects/Active/A233_RBGConnectivity/a233"
-dataDir <- file.path(projectDir, "Data/Raw")
-outDir <- file.path(projectDir, "Data/Processed")
+rawDataDir <- "Data/Raw"
+procDataDir <- "Data/Processed"
 
 ## Input parameters
-source(file.path(dataDir, "a233_InputParameters.R")) # project level parameters
+source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters
 	polygonBufferWidth
 
 
 ## Read in data---------------------------------------------------------
   # Resistance layer
 studyArea <- raster(
-				file.path(outDir, 
+				file.path(procDataDir, 
 				paste0("GenericResistance_", polygonBufferWidth, "km_buffer.tif")))
 
 
@@ -49,9 +48,9 @@ focalNodesID5 <- clump(focalNodes5)
 
 
 
-writeRaster(focalNodesID5, file.path(outDir, paste0("FocalNode_try5_", polygonBufferWidth, "km_buffered.asc")), overwrite=T)
-writeRaster(y, file.path(outDir, paste0("FocalNode_test_", polygonBufferWidth, "km_buffered.tif")), overwrite=T)
-writeRaster(y, file.path(outDir, paste0("FocalNode_test_", polygonBufferWidth, "km_buffered.asc")), overwrite=T)
+writeRaster(focalNodesID5, file.path(procDataDir, paste0("FocalNode_try5_", polygonBufferWidth, "km_buffered.asc")), overwrite=T)
+writeRaster(y, file.path(procDataDir, paste0("FocalNode_test_", polygonBufferWidth, "km_buffered.tif")), overwrite=T)
+writeRaster(y, file.path(procDataDir, paste0("FocalNode_test_", polygonBufferWidth, "km_buffered.asc")), overwrite=T)
 
 
 

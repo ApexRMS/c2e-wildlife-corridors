@@ -30,14 +30,14 @@ library(sf)
 library(stringr)
 
 # Directories
-dataDir <- "Data/Raw"
-outDir <- "Data/Processed"
+rawDataDir <- "Data/Raw"
+procDataDir <- "Data/Processed"
 
 ## Settings
 options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=10)
 
 ## Input parameters
-source(file.path(dataDir, "a233_InputParameters.R")) # project level parameters
+source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters
 	polygonBufferWidth
 	roadbuffer
 	minCulvertSize
@@ -56,21 +56,21 @@ ORbox <- function(length, width, height){
 
   # Read in generic resistance raster
 genericResistanceBuffer <- raster(
-							file.path(outDir, "Generic_Resistance_20km_buffer.tif"))
+							file.path(procDataDir, "Generic_Resistance_20km_buffer.tif"))
 
   # Study area - the polygon that encompases the Cootes to Escarpment EcoPark System
   # Projected file is our desired projection (see 1_StudyAreaLULCL)
-focalAreaPolygon <- st_read(file.path(outDir, "FocalArea.shp")) # Study area polygon
-studyAreaPolygon <- st_read(file.path(outDir, "StudyArea_20km.shp")) # Study area polygon
+focalAreaPolygon <- st_read(file.path(procDataDir, "FocalArea.shp")) # Study area polygon
+studyAreaPolygon <- st_read(file.path(procDataDir, "StudyArea_20km.shp")) # Study area polygon
 
   # Culverts
 culvertPoints <- st_read(file.path(
-						paste0(dataDir, "/Land use land cover/C2E_Culverts"),
+						paste0(rawDataDir, "/Land use land cover/C2E_Culverts"),
 						"C2E_Culverts.shp"))
   
   # Bridges
 bridgePoints <- st_read(file.path(
-						paste0(dataDir, "/Land use land cover/C2E_Bridges/"),
+						paste0(rawDataDir, "/Land use land cover/C2E_Bridges/"),
                         "C2E_Bridges.shp"))
   
 ## Adjust bridge and culvert extent and projection to match resistance layer------------
@@ -191,65 +191,65 @@ combinedRasterFocal  <- combinedRaster %>%
 
 write.csv(culvertCross, 
 				file.path(
-				paste0(dataDir, "/Resistance"), 
+				paste0(rawDataDir, "/Resistance"), 
                 "GenericCulvertResistanceCrosswalk.csv"), 
                 row.names=F)
 write.csv(bridgeCross, 
 				file.path(
-				paste0(dataDir, "/Resistance"), 
+				paste0(rawDataDir, "/Resistance"), 
                 "GenericBridgeResistanceCrosswalk.csv"), 
                 row.names=F)
 
   # Polygons
 st_write(bridgeFocalAreaRed, 
-			file.path(outDir, "allBridgesFocal.shp"), 
+			file.path(procDataDir, "allBridgesFocal.shp"), 
 			driver="ESRI Shapefile", 
 			delete_layer=TRUE)
 st_write(culvertFocalArea, 
-			file.path(outDir, "allCulvertsFocal.shp"), 
+			file.path(procDataDir, "allCulvertsFocal.shp"), 
 			driver="ESRI Shapefile",
 			delete_layer=TRUE)
 st_write(culvertFocalAreaRed, 
-			file.path(outDir, "suitableCulvertsFocal.shp"), 
+			file.path(procDataDir, "suitableCulvertsFocal.shp"), 
 			driver="ESRI Shapefile",
 			delete_layer=TRUE)
 
   # Rasters of resistance (Study Area buffered) 
 writeRaster(culvertRaster, 
-			file.path(outDir, "Generic_ResistanceCulvert_20km_buffer.tif"), 
+			file.path(procDataDir, "Generic_ResistanceCulvert_20km_buffer.tif"), 
 			overwrite=T)
 writeRaster(bridgeRaster, 
-			file.path(outDir, "Generic_ResistanceBridge_20km_buffer.tif"), 
+			file.path(procDataDir, "Generic_ResistanceBridge_20km_buffer.tif"), 
 			overwrite=T)
 writeRaster(combinedRaster, 
-			file.path(outDir, "Generic_ResistanceCulvertBridge_20km_buffer.tif"), 
+			file.path(procDataDir, "Generic_ResistanceCulvertBridge_20km_buffer.tif"), 
 			overwrite=T)
 
   # Rasters of resistance (Study Area)
 writeRaster(culvertRasterStudyArea, 
-			file.path(outDir, "Generic_ResistanceCulvert_20km.tif"), 
+			file.path(procDataDir, "Generic_ResistanceCulvert_20km.tif"), 
 			overwrite=T)
 writeRaster(bridgeRasterStudyArea, 
-			file.path(outDir, "Generic_ResistanceBridge_20km.tif"), 
+			file.path(procDataDir, "Generic_ResistanceBridge_20km.tif"), 
 			overwrite=T)
 writeRaster(combinedRasterStudyArea, 
-			file.path(outDir, "Generic_ResistanceCulvertBridge_20km.tif"), 
+			file.path(procDataDir, "Generic_ResistanceCulvertBridge_20km.tif"), 
 			overwrite=T)
 
   # Rasters of resistance (Focal Area)
 writeRaster(culvertRasterFocal, 
-			file.path(outDir, "Generic_ResistanceCulvert_FocalArea.tif"), 
+			file.path(procDataDir, "Generic_ResistanceCulvert_FocalArea.tif"), 
 			overwrite=T)
 writeRaster(bridgeRasterFocal, 
-			file.path(outDir, "Generic_ResistanceBridge_FocalArea.tif"), 
+			file.path(procDataDir, "Generic_ResistanceBridge_FocalArea.tif"), 
 			overwrite=T)
 writeRaster(combinedRasterFocal, 
-			file.path(outDir, "Generic_ResistanceCulvertBridge_FocalArea.tif"), 
+			file.path(procDataDir, "Generic_ResistanceCulvertBridge_FocalArea.tif"), 
 			overwrite=T)
 
   # ASCII
     # Rasters of resistance (Study Area buffered)
 writeRaster(combinedRaster, 
-			file.path(outDir, "Generic_ResistanceCulvertBridge_20km_buffer.asc"), 
+			file.path(procDataDir, "Generic_ResistanceCulvertBridge_20km_buffer.asc"), 
 			overwrite=T)
 #End script

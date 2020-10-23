@@ -27,9 +27,8 @@ library(sf)
 options(stringsAsFactors=FALSE, SHAPE_RESTORE_SHX=T, useFancyQuotes = F, digits=10)
 
   # Directories
-projectDir <- "~/Dropbox/Documents/ApexRMS/Work/A233 - Cootes to Escarpment" #CT
-dataDir <- file.path(projectDir, "Data/Raw")
-outDir <- file.path(projectDir, "Data/Processed")
+dataDir <- "Data/Raw"
+outDir <- "Data/Processed"
 
   # Input parameters
 source(file.path(dataDir, "a233_InputParameters.R")) # project level parameters
