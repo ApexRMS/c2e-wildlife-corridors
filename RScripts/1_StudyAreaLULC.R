@@ -406,6 +406,10 @@ LULC_vizFocal <- LULC_bufferViz %>%
   trim(.)
 
 ## Calculate percentage of each class in LULC maps
+freqLULC_viz <- as_tibble(freq(LULC_viz)) %>%
+  filter(!is.na(value)) %>% mutate(percent = count/sum(count)*100) %>% 
+  arrange(desc(percent))
+
 freqLULC_vizFocal <- as_tibble(freq(LULC_vizFocal)) %>%
   filter(!is.na(value)) %>% mutate(percent = count/sum(count)*100) %>% 
   arrange(desc(percent))
@@ -413,6 +417,9 @@ freqLULC_vizFocal <- as_tibble(freq(LULC_vizFocal)) %>%
 
 ## Save outputs --------------------------
   # Tabular
+write_csv(freqLULC_viz, 
+          file.path(outDir, "LULC_Visualization_20km_Freq.csv"))
+
 write_csv(freqLULC_vizFocal, 
           file.path(outDir, "LULC_Visualization_FocalArea_Freq.csv"))
 
