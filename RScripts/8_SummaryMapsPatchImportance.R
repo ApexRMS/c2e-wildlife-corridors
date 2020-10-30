@@ -38,7 +38,7 @@ source(file.path(rawDataDir, "a233_InputParameters.R")) # project level paramete
   # EcoParks data
 ecopark <- st_read(file.path(
 			paste0(rawDataDir, "/Land use land cover/EcoParkLands"), 			"CurrentEcoParkLands.shp")) 
-
+ecoparkRast <- rasterize(ecopark, combinedBinaryHS, background=NA, field="OBJECTID")
 ## Load species patch importance files -----------------------------------------
 
 focalArea <- raster(file.path(procDataDir, "LULC_FocalArea.tif"))
@@ -98,9 +98,12 @@ ODVI_HSred <- ODVI_HS %>%
   # Make binary version
 ODVI_HSbin <- calc(ODVI_HSred, fun=function(x){ifelse(x > 0, 1, x)})
 
-## Make combined habitat suitability layer 
-combinedHS <- sum(stack(BLBR_HSbin, EMBL_HSbin, ODVI_HSbin), na.rm=TRUE)
-combinedBinaryHS <- calc(combinedHS, fun=function(x){ifelse(x==0, NA, 1)})
+## Make combined binary habitat suitability layer 
+combinedBinaryHS <- stack(BLBR_HSbin, EMBL_HSbin, ODVI_HSbin) %>% 
+					sum(., na.rm=TRUE) %>%
+					calc(., fun=function(x){ifelse(x==0, NA, 1)})
+combinedBinaryHSU <- merge(ODVI_HSbin, BLBR_HSbin, EMBL_HSbin)
+plot(combinedBinaryHS - combinedBinaryHSU)
 
 ## Log, to improve normality
 densityLog <- density %>% 
@@ -142,19 +145,22 @@ ODVI_PCconnectExt  <-  ODVI_PCconnect %>%
 HSlayers <- stack(BLBR_HSred, EMBL_HSred, ODVI_HSred)
   # Calculate
 HS_PCRawSum <- sum(HSlayers, na.rm=TRUE)  # Raw sum
-HS_PCRawMax <- max(HSlayers, na.rm=TRUE)  # Raw sum
+HS_PCRawMax <- max(HSlayers, na.rm=TRUE)  # Raw max
+
   # Crop layer
 HS_SumCrop <- HS_PCRawSum %>%
-				crop(., focalArea) %>%
+				crop(., combinedBinaryHS) %>%
 				mask(., combinedBinaryHS)
 HS_MaxCrop <- HS_PCRawMax %>%
-				crop(., focalArea) %>%
+				crop(., combinedBinaryHS) %>%
 				mask(., combinedBinaryHS)				
 				
 plot(HS_SumCrop)
 plot(HS_MaxCrop)
 
 HS_SumCropRange <- calc(HS_SumCrop, fun = rescaleR)
+HS_MaxCropRange <- calc(HS_MaxCrop, fun = rescaleR)
+#scale 0.6-1
 HS_SumCropTruncRange <- calc(HS_SumCrop, fun = function(x){rescaleR(x, new.min=0.6, new.max=1)})
 HS_MaxCropTruncRange <- calc(HS_MaxCrop, fun = function(x){rescaleR(x, new.min=0.6, new.max=1)})
 
@@ -177,7 +183,9 @@ plot(PI_MaxCrop)
 plot(PI_SumCrop)
 
   # Density layer
-densityRescale <- densityCrop %>% calc(., fun = rescaleR)
+densityRescale <- densityCrop %>% 
+					mask(., combinedBinaryHS) %>%
+					calc(., fun = rescaleR)
 plot(densityRescale)
 
 ## Calculate sum layers for all layers
@@ -202,6 +210,8 @@ plot(allSp_range)
   # Overlay ecoparks layer
 # How much of suitable habitat for each species?
 
+intersect(BLBR_HS, ecopark)
+
 # How much of all suitable habitat?
 
 # Line plot of % of sum layer vs eco parks
@@ -211,16 +221,10 @@ plot(allSp_range)
 ## Save output raster files -------------------------------------
 
   # Intermediate outputs
-
-writeRaster(BLBR_HSbin, 
-			file.path(outDir, "BLBR_BinHabitatSuitability.tif"), 
-			overwrite=TRUE)		
-writeRaster(BLBR_HSbin, 
-			file.path(outDir, "EMBL_BinHabitatSuitability.tif"), 
-			overwrite=TRUE)		
-writeRaster(BLBR_HSbin, 
-			file.path(outDir, "ODVI_BinHabitatSuitability.tif"), 
-			overwrite=TRUE)		
+	
+writeRaster(combinedBinaryHS, 
+			file.path(outDir, "Combined_BinHabitatSuitability.tif"), 
+			overwrite=TRUE)				
 
   # Outputs per input type
 writeRaster(HS_SumCrop, 

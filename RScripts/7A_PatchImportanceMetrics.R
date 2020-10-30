@@ -75,6 +75,16 @@ PCfocal <- MK_dPCIIC(nodes = habitatPatchesFocal,
                 	 probability = 0.95, 
                 	 distance_thresholds = maxdist,
                 	 rasterparallel = T)
+                	 
+PCfocal50 <- MK_dPCIIC(nodes = habitatPatchesFocal, 
+                	 distance = list(type = "least-cost", 
+                				resistance = resistanceFocal, 
+                				mask =  habitatPatchesFocal),
+                	 attribute = NULL,
+                	 metric = "PC", 
+                	 probability = 0.5, 
+                	 distance_thresholds = maxdist,
+                	 rasterparallel = T)
 
 ## Save output files
   # Focal area
@@ -82,6 +92,11 @@ PCfocal <- MK_dPCIIC(nodes = habitatPatchesFocal,
 writeRaster(PCfocal, 
 				file.path(outDir, 
 				paste0(species, "_PC_FocalArea.tif")), 
+				overwrite=TRUE)  
+
+writeRaster(PCfocal50, 
+				file.path(outDir, 
+				paste0(species, "_PC_FocalAreaMedian.tif")), 
 				overwrite=TRUE)  
 
 rm(PCfocal)
