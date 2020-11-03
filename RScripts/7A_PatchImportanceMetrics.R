@@ -30,6 +30,13 @@ rawDataDir <- "Data/Raw"
 procDataDir <- "Data/Processed"
 outDir <- "Results"
 
+  # Functions
+rescaleR <- function(x, new.min = 0, new.max = 1) {
+   x.min = suppressWarnings(min(x, na.rm=TRUE))
+   x.max = suppressWarnings(max(x, na.rm=TRUE))
+   new.min + (x - x.min) * ((new.max - new.min) / (x.max - x.min))
+}
+
   # Input parameters
 source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters
 	specieslist
@@ -59,8 +66,10 @@ dispersalDistance <- read_csv(
 						paste0(rawDataDir, "/Focal Species"), 
 						"FocalSpeciesDispersalDistance.csv"))
 
- # Species dispersal maximal distance 
+ # Species dispersal maximal/or median distance 
 maxdist <- suppressWarnings(dispersalDistance[[which(dispersalDistance$Species == species), "Upper", ]])
+
+prob <- ifelse(species == "EMBL", 0.95, 0.5)
 
 ## Test of IIC and fractions measurements for focal species ----------------------------------------
 
@@ -72,20 +81,22 @@ PCfocal <- MK_dPCIIC(nodes = habitatPatchesFocal,
                 				mask =  habitatPatchesFocal),
                 	 attribute = NULL,
                 	 metric = "PC", 
-                	 probability = 0.95, 
+                	 probability = prob, 
                 	 distance_thresholds = maxdist,
                 	 rasterparallel = T)
+     
+  # Also transform and prep flux and connector layers for final report figures
+flux <- PCfocal[[4]] %>%
+		calc(., fun=log)
+flux[!is.finite(flux)] <- NA
+flux <-	calc(flux, fun=rescaleR)    
+ 
+connector <- PCfocal[[5]] %>%
+		calc(., fun=log)
+connector[!is.finite(connector)] <- NA
+connector <- calc(connector, fun=rescaleR)    
+     
                 	 
-PCfocal50 <- MK_dPCIIC(nodes = habitatPatchesFocal, 
-                	 distance = list(type = "least-cost", 
-                				resistance = resistanceFocal, 
-                				mask =  habitatPatchesFocal),
-                	 attribute = NULL,
-                	 metric = "PC", 
-                	 probability = 0.5, 
-                	 distance_thresholds = maxdist,
-                	 rasterparallel = T)
-
 ## Save output files
   # Focal area
   #geotif
@@ -94,13 +105,20 @@ writeRaster(PCfocal,
 				paste0(species, "_PC_FocalArea.tif")), 
 				overwrite=TRUE)  
 
-writeRaster(PCfocal50, 
+writeRaster(flux, 
 				file.path(outDir, 
-				paste0(species, "_PC_FocalAreaMedian.tif")), 
+				paste0(species, "_PC_FocalArea_Flux_log&0-1.tif")), 
 				overwrite=TRUE)  
+
+writeRaster(connector, 
+				file.path(outDir, 
+				paste0(species, "_PC_FocalArea_Connector_log&0-1.tif")), 
+				overwrite=TRUE)  		
 
 rm(PCfocal)
 
 } #end loop
 
 # End script
+
+
