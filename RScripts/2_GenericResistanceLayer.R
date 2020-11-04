@@ -29,7 +29,7 @@ rawDataDir <- "Data/Raw"
 procDataDir <- "Data/Processed"
 
   # Input parameters
-source(file.path(rawDataDir, "a233_InputParameters.R"))
+source(file.path("Data/Parameters", "a233_InputParams.R")) # project level parameters
 	polygonBufferWidth
 	roadbuffer
 

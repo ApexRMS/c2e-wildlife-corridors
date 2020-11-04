@@ -32,7 +32,7 @@ rescaleR <- function(x, new.min = 0, new.max = 1) {
 }
 
   # Input parameters
-source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters
+source(file.path("Data/Parameters", "a233_InputParams.R")) # project level parameters
 	specieslist
 
   # EcoParks data

@@ -34,7 +34,7 @@ procDataDir <- "Data/Processed"
 outDir <- "Results"
 
   # Input parameters
-source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters
+source(file.path("Data/Parameters", "a233_InputParams.R")) # project level parameters
 	polygonBufferWidth
 	suitabilityThreshold
 

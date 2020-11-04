@@ -38,7 +38,7 @@ rescaleR <- function(x, new.min = 0, new.max = 1) {
 }
 
   # Input parameters
-source(file.path(rawDataDir, "a233_InputParameters.R")) # project level parameters
+source(file.path("Data/Parameters", "a233_InputParams.R")) # project level parameters
 	specieslist
 	polygonBufferWidth
 	suitabilityThreshold
@@ -68,12 +68,11 @@ dispersalDistance <- read_csv(
 
  # Species dispersal maximal/or median distance 
 maxdist <- suppressWarnings(dispersalDistance[[which(dispersalDistance$Species == species), "Upper", ]])
-
+ # Account for fact that Albert distances  represent the Median
 prob <- ifelse(species == "EMBL", 0.95, 0.5)
 
-## Test of IIC and fractions measurements for focal species ----------------------------------------
+## Test of IIC and fractions measurements for focal species in focal Area ----------------------------------------
 
-  # Focal area
   # PC & fractions
 PCfocal <- MK_dPCIIC(nodes = habitatPatchesFocal, 
                 	 distance = list(type = "least-cost", 
@@ -87,16 +86,13 @@ PCfocal <- MK_dPCIIC(nodes = habitatPatchesFocal,
      
   # Also transform and prep flux and connector layers for final report figures
 flux <- PCfocal[[4]] %>%
-		calc(., fun=log)
-flux[!is.finite(flux)] <- NA
-flux <-	calc(flux, fun=rescaleR)    
+		calc(., fun=rescaleR)    
  
 connector <- PCfocal[[5]] %>%
-		calc(., fun=log)
-connector[!is.finite(connector)] <- NA
-connector <- calc(connector, fun=rescaleR)    
-     
-                	 
+		calc(., fun=function(x){log(x+10^-16)}) %>%
+		calc(., fun=rescaleR)    
+  
+
 ## Save output files
   # Focal area
   #geotif
@@ -107,7 +103,7 @@ writeRaster(PCfocal,
 
 writeRaster(flux, 
 				file.path(outDir, 
-				paste0(species, "_PC_FocalArea_Flux_log&0-1.tif")), 
+				paste0(species, "_PC_FocalArea_Flux_0-1.tif")), 
 				overwrite=TRUE)  
 
 writeRaster(connector, 
