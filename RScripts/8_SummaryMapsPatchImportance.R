@@ -35,10 +35,7 @@ rescaleR <- function(x, new.min = 0, new.max = 1) {
 source(file.path("Data/Parameters", "a233_InputParams.R")) # project level parameters
 	specieslist
 
-  # EcoParks data
-ecopark <- st_read(file.path(
-			paste0(rawDataDir, "/Land use land cover/EcoParkLands"), 			"CurrentEcoParkLands.shp")) 
-ecoparkRast <- rasterize(ecopark, combinedBinaryHS, background=NA, field="OBJECTID")
+
 ## Load species patch importance files -----------------------------------------
 
 focalArea <- raster(file.path(procDataDir, "LULC_FocalArea.tif"))
@@ -206,16 +203,6 @@ plot(allSpRawMax)
   # Range scale from 0-1
 allSp_range <- calc(allSpRawSum, fun = rescaleR)
 plot(allSp_range)
-
-  # Overlay ecoparks layer
-# How much of suitable habitat for each species?
-
-intersect(BLBR_HS, ecopark)
-
-# How much of all suitable habitat?
-
-# Line plot of % of sum layer vs eco parks
-
 
 
 ## Save output raster files -------------------------------------
