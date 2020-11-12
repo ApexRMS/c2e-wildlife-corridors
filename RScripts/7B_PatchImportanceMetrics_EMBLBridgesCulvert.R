@@ -70,7 +70,7 @@ maxdist <- suppressWarnings(dispersalDistance[[which(dispersalDistance$Species==
 resistanceBridgeFocalreclass <- reclassify(resistanceBridgeFocal, rcl=cbind(10, 2), include.lowest=T)
 resistanceCulvertsFocalreclass <- reclassify(resistanceCulvertsFocal, rcl=cbind(10, 2), include.lowest=T)
 
-## Combine resistance layer with culverts, bridges resistance layer ------------------------------
+## Combine resistance layer with culverts, bridges resistance layer --------------------
 
   #crop to focal extent
 resistanceRasterFocal <- resistanceFocal %>%
@@ -100,7 +100,6 @@ PCfocal <- MK_dPCIIC(nodes = habitatPatchesFocal,
 
 ## Save rasters
   # Focal area 
-  #patch importance metrics
   #geotif
 writeRaster(PCfocal, 
 				file.path(outDir, 
@@ -113,4 +112,4 @@ writeRaster(combinedRaster,
 				overwrite=TRUE)
 
 
-##End script
+##End script-----------------------

@@ -36,7 +36,7 @@ source(file.path("Data/Parameters", "a233_InputParams.R")) # project level param
 	polygonBufferWidth
 	suitabilityThreshold
 
-## Load data
+## Load data ---------------------------------------------------------------
   # Combined LULC layers
 LULC <- raster(
 			file.path(outDir, 
@@ -77,7 +77,7 @@ hendry <- hendryMulti %>%
 			rasterize(., LULC_buffer, field = "DestinationID") %>% # Rasterize
 			calc(., fun=function(x){ifelse(x==100, 100, NA)})
 
-## Create habitat suitability layer  ---------------------------------------------------------
+## Create habitat suitability layer  ---------------------------------------
 
 ## For loop over species list to generate focal species habitat suitability and resistance rasters
 
@@ -90,6 +90,7 @@ suitabilityRaster <- LULC_buffer %>%
 
 if(species=="EMBL"){
 	suitabilityRaster <- max(suitabilityRaster, hendry, na.rm=TRUE)
+
 }
 
 
@@ -124,8 +125,8 @@ resistanceRasterReclass <- LULC_buffer %>%
   # Overlay habitat patches
 resistanceRaster <- overlay(resistanceRasterReclass, habitatRaster, 
 							fun = function(x, y){return(ifelse(y==1, 1, x))})
-#Reclass to assign habitat patches a resistance value = 1 (note that both overlaid values of both 3 and 5 correspond to habitat patches)
-#resistanceRaster <- reclassify(resistanceRasterOverlay, rcl = matrix(c(3, 1, 5, 1, 7, 1, 9, 1), ncol=2, byrow = T))
+  # Reclass to assign habitat patches a resistance value = 1 (note that both overlaid values of both 3 and 5 correspond to habitat patches)
+  # resistanceRaster <- reclassify(resistanceRasterOverlay, rcl = matrix(c(3, 1, 5, 1, 7, 1, 9, 1), ncol=2, byrow = T))
 
 ## Crop layers to focal region and study area--------------------------------------------
   
@@ -236,4 +237,4 @@ writeRaster(habitatRasterCont,
 } #end loop
 
 
-## End script
+## End script-----------------------

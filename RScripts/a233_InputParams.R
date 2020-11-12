@@ -3,7 +3,7 @@
 #  Headers, input parameter values   
 #  09/2020                                                                          
 #                                                                  
-# Script created by C Tucker  for ApexRMS 
+# Source file created by C Tucker  for ApexRMS 
 #####################################################################
 
 

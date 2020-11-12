@@ -152,9 +152,6 @@ HS_MaxCrop <- HS_PCRawMax %>%
 				crop(., combinedBinaryHS) %>%
 				mask(., combinedBinaryHS)				
 				
-plot(HS_SumCrop)
-plot(HS_MaxCrop)
-
 HS_SumCropRange <- calc(HS_SumCrop, fun = rescaleR)
 HS_MaxCropRange <- calc(HS_MaxCrop, fun = rescaleR)
 #scale 0.6-1
@@ -176,14 +173,11 @@ PI_MaxCrop <- PI_PCRawMax %>%
 				crop(., focalArea) %>%
 				mask(., combinedBinaryHS) %>%
 				calc(., fun = rescaleR)
-plot(PI_MaxCrop)
-plot(PI_SumCrop)
 
   # Density layer
 densityRescale <- densityCrop %>% 
 					mask(., combinedBinaryHS) %>%
 					calc(., fun = rescaleR)
-plot(densityRescale)
 
 ## Calculate sum layers for all layers
 
@@ -193,22 +187,16 @@ allSpAllMax <- stack(HS_MaxCropTruncRange, PI_MaxCrop, densityRescale)
 allSpRawSum <- sum(allSp, na.rm=TRUE) %>%
 				crop(., focalArea) %>%
 				mask(., combinedBinaryHS)
-plot(allSpRawSum)
 allSpRawMax <- sum(allSpAllMax, na.rm=TRUE) %>%
 				crop(., focalArea) %>%
 				mask(., combinedBinaryHS)
-plot(allSpRawMax)
-		
 				
   # Range scale from 0-1
 allSp_range <- calc(allSpRawSum, fun = rescaleR)
-plot(allSp_range)
-
 
 ## Save output raster files -------------------------------------
 
-  # Intermediate outputs
-	
+  # Intermediate outputs	
 writeRaster(combinedBinaryHS, 
 			file.path(outDir, "Combined_BinHabitatSuitability.tif"), 
 			overwrite=TRUE)				
@@ -250,4 +238,4 @@ writeRaster(allSp_range,
 			file.path(outDir, "All_CombinedLayers_0-1.tif"), 
 			overwrite=TRUE)		
 
-## End script
+## End script-----------------------------

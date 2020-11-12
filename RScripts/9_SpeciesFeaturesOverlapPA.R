@@ -90,10 +90,12 @@ ODVI_PCconnect <- raster(file.path(outDir,
 					  mask(., focalArea)
 
 ## Combine parks layer and focal area --------------------------------------------
+
   # Overlay ecoparks layer
 ecoparkSingle <- ecopark %>%
 				st_cast(., "POLYGON") %>%
 				st_transform(., crs=crs(focalArea))  # Transform to focal CRS
+
   # Convert to comparable raster
 ecoparkRast <- ecoparkSingle %>%
 				rasterize(., focalArea, field="OBJECTID") %>%
@@ -157,4 +159,4 @@ length(which(values(ODVI_HS)>0)) / 225847 #ODVI
 
 length(which(values(EMBL_HS)>0)) / 225847 #EMBL
 
-  # End script
+# End script--------------------------

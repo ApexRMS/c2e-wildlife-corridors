@@ -133,7 +133,7 @@ OLCDB_rcl_buffer <- OLCDB_buffer %>%
   		reclassify(., rcl=crosswalk[which(crosswalk$Source_Name == "OLCDB"), c("Source_ID", "Destination_ID")])
 
   # ORN
-   # Crop to buffered study area
+  # Crop to buffered study area
 ORN_buffer <- ORNRaw %>%
   		st_transform(., crs=st_crs(SOLRIS_buffer)) %>% # Transform to SOLRIS CRS
   		st_intersection(., studyAreaBuffer) %>% # Clip to buffered study area
@@ -143,7 +143,6 @@ ORN_bufferMajor <- ORN_buffer[ORN_buffer$ROAD_CLASS %in% c("Arterial", "Collecto
 
 ORN_bufferMinor <- ORN_buffer[ORN_buffer$ROAD_CLASS %in% c("Local / Strata", "Local / Street", "Service", "Alleyway / Laneway", "<NA>", "Local / Unknown"),]
 
-  		
   # Reclassify
 ORN_rcl_buffer <- ORN_buffer %>%
   		left_join(., crosswalk[which(crosswalk$Source_Name == "ORN"), c("Destination_ID", "Source_Label")], by=c("ROAD_CLASS" = "Source_Label")) %>% # Add Destination_ID
@@ -191,6 +190,7 @@ urban_rcl_buffer <- urban_buffer %>%
   		left_join(., crosswalk[which(crosswalk$Source_Name == "Built-up Areas"), c("Destination_ID", "Source_Label")], by=c("COMMUNIT_1" = "Source_Label")) %>% # Add Destination_ID
   		rasterize(., SOLRIS_buffer, field="Destination_ID") # Rasterize
 
+  # Reclassify specific land plots based on feedback
 berry_buffer <- berryII %>%
 		st_transform(., crs=st_crs(SOLRIS_buffer)) %>% # Transform to SOLRIS CRS
   		st_intersection(., studyAreaBuffer)

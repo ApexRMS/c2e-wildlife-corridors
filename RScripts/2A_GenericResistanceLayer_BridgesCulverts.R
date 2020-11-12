@@ -18,7 +18,7 @@
 #	 - OR values                                                     
 #    - Bridge and Culvert Resistance layer                       
 #                                                                   
-# Script created by , C Tucker, B Rayfield, C Debeyser for ApexRMS	
+# Script created by C Tucker, B Rayfield, C Debeyser for ApexRMS	
 #####################################################################
 
 ## Workspace ---------------------------------------------------------
@@ -123,7 +123,8 @@ culvertCross <- culvertFocalAreaRed %>%
 					dplyr::select(CULV_ID, ROAD, OR, Resistance) %>%
 					filter_all(all_vars(!is.infinite(.)))
 				
-## Calculate resistance values for bridges ------------------------------------------------------
+## Calculate resistance values for bridges -------------------------------------
+ 
   # All bridges given resistance value of bridgeResistancevalue
 bridgeFocalAreaRed <- bridgeFocalArea %>% 
 						mutate(Resistance = bridgeResistancevalue)
@@ -156,6 +157,7 @@ resistanceStack <- stack(genericResistanceBuffer, culvertRaster, bridgeRaster)
 combinedRaster  <- min(resistanceStack, na.rm=TRUE)
 
 ## Crop to study area --------------------------------------------------------
+
 culvertRasterStudyArea <- culvertRaster %>%
   	crop(., extent(studyAreaPolygon), snap="out") %>% # Crop to focal area extent
   	mask(., mask=studyAreaPolygon) %>% # Clip to focal area
@@ -172,6 +174,7 @@ combinedRasterStudyArea  <- combinedRaster %>%
   	trim(.) # Trim extra white spaces
 
 ## Crop to focal area ----------------------------------------------------------
+
 culvertRasterFocal <- culvertRaster %>%
   	crop(., extent(focalAreaPolygon), snap="out") %>% # Crop to focal area extent
   	mask(., mask=focalAreaPolygon) %>% # Clip to focal area
@@ -252,4 +255,4 @@ writeRaster(combinedRasterFocal,
 writeRaster(combinedRaster, 
 			file.path(procDataDir, "Generic_ResistanceCulvertBridge_20km_buffer.asc"), 
 			overwrite=T)
-#End script
+#End script-----------------

@@ -71,7 +71,7 @@ maxdist <- suppressWarnings(dispersalDistance[[which(dispersalDistance$Species =
  # Account for fact that Albert distances  represent the Median
 prob <- ifelse(species == "EMBL", 0.95, 0.5)
 
-## Test of IIC and fractions measurements for focal species in focal Area ----------------------------------------
+## Test of PC fractions measurements for focal species in focal Area ---------------
 
   # PC & fractions
 PCfocal <- MK_dPCIIC(nodes = habitatPatchesFocal, 
@@ -115,6 +115,6 @@ rm(PCfocal)
 
 } #end loop
 
-# End script
+# End script-----------------------
 
 
