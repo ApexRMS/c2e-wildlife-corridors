@@ -24,7 +24,7 @@ rawDataDir <- "Data/Raw"
 procDataDir <- "Data/Processed"
 
 ## Input parameters
-source(file.path("Data/Parameters", "a233_InputParams.R")) # project level parameters
+source(file.path("Data", "a233_InputParams.R")) # project level parameters
 	polygonBufferWidth
 
 
@@ -32,7 +32,7 @@ source(file.path("Data/Parameters", "a233_InputParams.R")) # project level param
   # Resistance layer
 studyArea <- raster(
 				file.path(procDataDir, 
-				paste0("GenericResistance_", polygonBufferWidth, "km_buffer.tif")))
+				paste0("Generic_Resistance_", polygonBufferWidth, "km_buffer.tif")))
 
 
 ## Generate nodes ---------------------------------------------------------
@@ -43,12 +43,12 @@ studyArea[studyArea > 0] <- 1
   #ID boundary 
 boundary <- boundaries(studyArea, type='inner', directions=8, asNA=T)
 
-focalNodes5 <- sampleRandom(boundary, size=5, asRaster=T)
-focalNodesID5 <- clump(focalNodes5)
+focalNodes50 <- sampleRandom(boundary, size=50, asRaster=T)
+focalNodesID50 <- clump(focalNodes50)
 
 
 
-writeRaster(focalNodesID5, file.path(procDataDir, paste0("FocalNode_try5_", polygonBufferWidth, "km_buffered.asc")), overwrite=T)
+writeRaster(focalNodesID50, file.path(procDataDir, paste0("FocalNode_50_", polygonBufferWidth, "km_buffered.asc")), overwrite=T)
 writeRaster(y, file.path(procDataDir, paste0("FocalNode_test_", polygonBufferWidth, "km_buffered.tif")), overwrite=T)
 writeRaster(y, file.path(procDataDir, paste0("FocalNode_test_", polygonBufferWidth, "km_buffered.asc")), overwrite=T)
 

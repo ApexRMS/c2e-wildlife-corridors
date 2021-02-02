@@ -8,7 +8,7 @@ rawDataDir <- "Data/Raw"
 procDataDir <- "Data/Processed"
 outDir <- "Results"
 
-analysisName <- "Generic_CulvertBridge_5pairwise"
+analysisName <- "Generic_CulvertBridge_50pairwise"
 
 # Read in data
 studyArea <- st_read(file.path(procDataDir, paste0("StudyArea_20km.shp")))
