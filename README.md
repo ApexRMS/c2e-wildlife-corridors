@@ -2,3 +2,4 @@
 
 Scripts used in the project - Wildlife Connectivity-Corridor Mapping in the <a href=https://cootestoescarpmentpark.ca/ target="_blank">Cootes to Escarpment EcoPark System</a> - carried out by ApexRMS in 2020 for the <a href=https://www.rbg.ca/ target="_blank">Royal Botanical Gardens</a> with support from the <a href=https://www.greenbelt.ca/ target="_blank"> Ontario Greenbelt Foundation</a>. 
 
+For additional information, visit the <a href=https://apexrms.com/wildlife-corridor-analysis/ target="_blank">project description page</a>.
